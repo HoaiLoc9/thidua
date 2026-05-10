@@ -1,0 +1,246 @@
+.form-group-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group .required {
+  color: #ff0000;
+}
+
+.form-group input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.form-actions-bottom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.btn-primary {
+  padding: 10px 24px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Evidence cell styles */
+.evidence-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evidence-item {
+  font-size: 12px;
+}
+
+.evidence-item a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.evidence-item a:hover {
+  text-decoration: underline;
+}
+
+.no-evidence {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
+.evidence-upload-small {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.file-input-small {
+  display: none;
+}
+
+.btn-upload-small {
+  padding: 4px 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-upload-small:hover {
+  background-color: #0056b3;
+}
+
+.file-name-small-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background-color: #e8f4f8;
+  border: 1px solid #b3e5fc;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.file-name-small-display span {
+  color: #0056b3;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-clear-file {
+  background: transparent;
+  border: none;
+  color: #0056b3;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  transition: background-color 0.2s;
+  border-radius: 2px;
+}
+
+.btn-clear-file:hover {
+  background-color: rgba(0, 86, 179, 0.1);
+}
+
+.btn-upload-confirm {
+  padding: 4px 8px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-upload-confirm:hover {
+  background-color: #218838;
+}
+.btn-submit-small {
+  padding: 6px 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit-small:hover {
+  background-color: #218838;
+}
+
+.review-actions-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.review-actions-inline .btn-submit-small,
+.review-actions-inline .danger {
+  min-width: 82px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.review-actions-inline .danger {
+  border: none;
+  border-radius: 3px;
+  background-color: #dc3545;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.review-actions-inline .danger:hover:enabled {
+  background-color: #c82333;
+}
+
+.review-actions-inline button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.review-actions-inline small {
+  color: #b26a00;
+}
+
+@media (max-width: 768px) {
+  .form-group-section {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-cell {
+    min-width: auto;
+  }
+}

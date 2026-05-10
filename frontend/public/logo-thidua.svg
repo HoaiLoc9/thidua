@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGradient" x1="82" y1="40" x2="430" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A6E5D"/>
+      <stop offset="1" stop-color="#123A31"/>
+    </linearGradient>
+    <linearGradient id="medalGradient" x1="176" y1="196" x2="336" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6D37A"/>
+      <stop offset="1" stop-color="#D69A2C"/>
+    </linearGradient>
+    <filter id="softShadow" x="56" y="20" width="400" height="472" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="10"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.19 0 0 0 0 0.16 0 0 0 0.30 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <path d="M256 50L404 108V228C404 313 344 389 256 454C168 389 108 313 108 228V108L256 50Z" fill="url(#shieldGradient)"/>
+    <path d="M256 86L374 132V228C374 298 327 361 256 418C185 361 138 298 138 228V132L256 86Z" stroke="#E9F6F2" stroke-opacity="0.6" stroke-width="6"/>
+  </g>
+
+  <path d="M202 146C212 165 230 178 256 178C282 178 300 165 310 146" stroke="#D8EFE8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M256 184L280 230L332 238L294 274L304 326L256 300L208 326L218 274L180 238L232 230L256 184Z" fill="url(#medalGradient)"/>
+
+  <circle cx="256" cy="268" r="54" fill="#FDF4DD" fill-opacity="0.24"/>
+  <path d="M233 268L248 283L281 250" stroke="#FFF7DF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M208 326L194 392L242 356L256 392L270 356L318 392L304 326" fill="#F2B545"/>
+  <path d="M208 326L194 392L242 356L256 392L270 356L318 392L304 326" stroke="#8A5B12" stroke-opacity="0.45" stroke-width="4"/>
+</svg>

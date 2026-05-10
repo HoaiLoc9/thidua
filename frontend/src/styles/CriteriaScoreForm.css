@@ -1,0 +1,334 @@
+.criteria-score-form {
+  width: 100%;
+}
+
+.error-message {
+  padding: 12px;
+  background-color: #fee;
+  color: #c33;
+  border-left: 4px solid #c33;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.no-criteria {
+  text-align: center;
+  padding: 32px 16px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Bảng tiêu chí */
+.criteria-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.criteria-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.criteria-table thead {
+  background-color: #f5f5f5;
+}
+
+.criteria-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+.criteria-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.criteria-table tbody tr:hover {
+  background-color: #fafafa;
+}
+
+/* Cột tiêu chí */
+.col-criteria {
+  width: 45%;
+  padding: 12px;
+}
+
+.criteria-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.criteria-code {
+  font-weight: 600;
+  color: #0066cc;
+  font-size: 13px;
+}
+
+.criteria-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.criteria-desc {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin: 4px 0;
+}
+
+.criteria-maxpoint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.criteria-maxpoint strong {
+  color: #ff6600;
+}
+
+/* Cột điểm */
+.col-score {
+  width: 15%;
+  padding: 12px;
+  text-align: center;
+}
+
+.score-input {
+  width: 100%;
+  max-width: 80px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.score-input:invalid {
+  border-color: #ff6666;
+}
+
+/* Cột minh chứng */
+.col-evidence {
+  width: 40%;
+  padding: 12px;
+}
+
+.evidence-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Custom file input */
+.file-label {
+  position: relative;
+  display: inline-block;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-button {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.file-button:hover {
+  background-color: #0056b3;
+}
+
+.file-button:active {
+  transform: scale(0.98);
+}
+
+.file-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* File đã chọn */
+.file-selected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: #e8f4f8;
+  border: 1px solid #b3e5fc;
+  border-radius: 4px;
+}
+
+.file-name {
+  font-size: 12px;
+  color: #0056b3;
+  font-weight: 500;
+  word-break: break-word;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #0056b3;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+.file-remove:hover {
+  background-color: rgba(0, 86, 179, 0.1);
+}
+
+/* Tổng điểm */
+.total-score-section {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.total-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.total-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.total-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0066cc;
+}
+
+.total-unit {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Nút submit */
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+.btn-submit {
+  padding: 10px 24px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.btn-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-submit:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .criteria-table {
+    font-size: 12px;
+  }
+
+  .col-criteria {
+    width: 50%;
+  }
+
+  .col-score {
+    width: 15%;
+  }
+
+  .col-evidence {
+    width: 35%;
+  }
+
+  .score-input {
+    max-width: 70px;
+    padding: 6px 4px;
+  }
+
+  .file-button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .file-name {
+    max-width: 100px;
+  }
+
+  .criteria-desc {
+    display: none;
+  }
+
+  .criteria-maxpoint {
+    font-size: 11px;
+  }
+
+  .total-score-display {
+    font-size: 14px;
+  }
+
+  .total-value {
+    font-size: 20px;
+  }
+}

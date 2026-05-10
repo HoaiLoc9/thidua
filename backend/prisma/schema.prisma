@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CANBO
+  GIANGVIEN
+  SINHVIEN
+  HOIDONG
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum NominationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum ReviewLevel {
+  DONVI
+  KHOA
+  TRUONG
+}
+
+enum ReviewDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  fullName     String
+  email        String       @unique
+  passwordHash String
+  role         Role
+  department   String?
+  departmentId Int?
+  createdAt    DateTime     @default(now())
+  departmentRef Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  nominations  Nomination[]
+  reviews      ReviewStep[]
+  notifications Notification[]
+  auditLogs    AuditLog[]
+  approvals    ApprovalResult[]
+}
+
+model Department {
+  id             Int      @id @default(autoincrement())
+  departmentName String   @unique
+  departmentType String
+  createdAt      DateTime @default(now())
+  users          User[]
+}
+
+model AcademicYear {
+  id         Int      @id @default(autoincrement())
+  yearName   String   @unique
+  startDate  DateTime
+  endDate    DateTime
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  criteria   Criteria[]
+  awards     AwardType[]
+  nominations Nomination[]
+}
+
+model Criteria {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique
+  title       String
+  description String?
+  maxPoint    Int
+  target      String           @default("SINHVIEN")
+  isTest      Boolean          @default(false)
+  periodYear  Int?
+  academicYearId Int?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  academicYear AcademicYear?   @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  items       NominationItem[]
+}
+
+model AwardType {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  category    String
+  description String?
+  periodYear  Int
+  academicYearId Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+}
+
+model Nomination {
+  id             Int              @id @default(autoincrement())
+  title          String
+  periodYear     Int
+  academicYearId Int?
+  status         NominationStatus @default(DRAFT)
+  totalSelfPoint Int              @default(0)
+  applicantId    Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  academicYear   AcademicYear?    @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  applicant      User             @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  items          NominationItem[]
+  reviews        ReviewStep[]
+  evidences      Evidence[]
+  approvals      ApprovalResult[]
+}
+
+model NominationItem {
+  id           Int        @id @default(autoincrement())
+  nominationId Int
+  criteriaId   Int
+  selfPoint    Int
+  evidence     String?
+  nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  criteria     Criteria   @relation(fields: [criteriaId], references: [id], onDelete: Restrict)
+
+  @@unique([nominationId, criteriaId])
+}
+
+model ReviewStep {
+  id           Int            @id @default(autoincrement())
+  nominationId Int
+  reviewerId   Int
+  level        ReviewLevel
+  decision     ReviewDecision @default(PENDING)
+  comment      String?
+  reviewedAt   DateTime?
+  nomination   Nomination     @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  reviewer     User           @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([nominationId, reviewerId, level])
+}
+
+model Evidence {
+  id           Int      @id @default(autoincrement())
+  nominationId Int
+  fileUrl      String
+  description  String?
+  uploadedAt   DateTime @default(now())
+  nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+}
+
+model ApprovalProcess {
+  id          Int      @id @default(autoincrement())
+  processName String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  steps       ApprovalStep[]
+}
+
+model ApprovalStep {
+  id          Int      @id @default(autoincrement())
+  processId   Int
+  stepOrder   Int
+  role        Role
+  description String?
+  process     ApprovalProcess @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@unique([processId, stepOrder])
+}
+
+model ApprovalResult {
+  id           Int            @id @default(autoincrement())
+  nominationId Int
+  approverId   Int
+  status       ReviewDecision
+  comment      String?
+  approvalDate DateTime       @default(now())
+  nomination   Nomination     @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  approver     User           @relation(fields: [approverId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  message   String
+  status    NotificationStatus @default(UNREAD)
+  createdAt DateTime           @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  action      String
+  timestamp   DateTime @default(now())
+  description String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
