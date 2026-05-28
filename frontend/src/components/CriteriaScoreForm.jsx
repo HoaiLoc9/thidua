@@ -3,9 +3,24 @@ import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import "../styles/CriteriaScoreForm.css";
 
-export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) {
+const ALLOWED_EVIDENCE_EXTENSIONS = ["pdf", "docx", "xlsx", "png", "jpg", "jpeg", "zip"];
+
+function isAllowedEvidenceFile(file) {
+  const extension = (file?.name?.split(".").pop() || "").toLowerCase();
+  return ALLOWED_EVIDENCE_EXTENSIONS.includes(extension);
+}
+
+export default function CriteriaScoreForm({
+  onScoreChange,
+  onSubmit,
+  loading,
+  canEditScores = true,
+  showScores = true,
+  reviewLevel = "DONVI",
+}) {
   const { isAuthenticated } = useAuth();
   const [criteria, setCriteria] = useState([]);
+  const [selectedCriteriaId, setSelectedCriteriaId] = useState("");
   const [scores, setScores] = useState({});
   const [files, setFiles] = useState({});
   const [error, setError] = useState("");
@@ -17,7 +32,7 @@ export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) 
     
     const loadCriteria = async () => {
       try {
-        const { data } = await api.get("/criteria");
+        const { data } = await api.get(`/criteria?reviewLevel=${reviewLevel}`);
         setCriteria(data);
         // Initialize scores
         const initialScores = {};
@@ -25,6 +40,7 @@ export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) 
           initialScores[c.id] = 0;
         });
         setScores(initialScores);
+        setSelectedCriteriaId(data.length ? String(data[0].id) : "");
         setError("");
       } catch (err) {
         console.error("Error loading criteria:", err);
@@ -32,7 +48,7 @@ export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) 
       }
     };
     loadCriteria();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, reviewLevel]);
 
   // Tính tổng điểm real-time
   const totalScore = useMemo(() => {
@@ -69,6 +85,13 @@ export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) 
   const handleFileSelect = useCallback((criteriaId, event) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!isAllowedEvidenceFile(file)) {
+        setError("Chỉ được tải lên minh chứng dạng PDF, DOCX, XLSX, PNG/JPG hoặc ZIP.");
+        event.target.value = "";
+        return;
+      }
+
+      setError("");
       setFiles((prev) => ({
         ...prev,
         [criteriaId]: file,
@@ -90,100 +113,114 @@ export default function CriteriaScoreForm({ onScoreChange, onSubmit, loading }) 
     });
   }, []);
 
+  const selectedCriterion = criteria.find((item) => String(item.id) === String(selectedCriteriaId));
+
   return (
     <div className="criteria-score-form">
       {error && <div className="error-message">{error}</div>}
 
       {criteria.length > 0 ? (
-        <div className="criteria-table-wrapper">
-          <table className="criteria-table">
-            <thead>
-              <tr>
-                <th className="col-criteria">Tiêu chí</th>
-                <th className="col-score">Điểm</th>
-                <th className="col-evidence">Minh chứng</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="criteria-select-wrapper">
+          <label className="field-group">
+            <span>Chọn tiêu chí</span>
+            <select
+              value={selectedCriteriaId}
+              onChange={(e) => setSelectedCriteriaId(e.target.value)}
+            >
               {criteria.map((criterion) => (
-                <tr key={criterion.id} className="criteria-row">
-                  {/* Cột tiêu chí */}
-                  <td className="col-criteria">
-                    <div className="criteria-info">
-                      <div className="criteria-code">{criterion.code}</div>
-                      <div className="criteria-title">{criterion.title}</div>
-                      {criterion.description && (
-                        <div className="criteria-desc">{criterion.description}</div>
-                      )}
-                      <div className="criteria-maxpoint">
-                        Tối đa: <strong>{criterion.maxPoint}</strong> điểm
-                      </div>
-                    </div>
-                  </td>
+                <option key={criterion.id} value={criterion.id}>
+                  {criterion.code} - {criterion.title}
+                </option>
+              ))}
+            </select>
+          </label>
 
-                  {/* Cột nhập điểm */}
-                  <td className="col-score">
+          {selectedCriterion ? (
+            <div className="criteria-detail-card">
+              <div className="criteria-info">
+                <div className="criteria-code">{selectedCriterion.code}</div>
+                <div className="criteria-title">{selectedCriterion.title}</div>
+                {selectedCriterion.description && (
+                  <div className="criteria-desc">{selectedCriterion.description}</div>
+                )}
+                {showScores ? (
+                  <div className="criteria-maxpoint">
+                    Tối đa: <strong>{selectedCriterion.maxPoint}</strong> điểm
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="criteria-inputs-row">
+                {showScores ? (
+                  <div className="criteria-input-block">
+                    <label className="criteria-inline-label">Điểm</label>
                     <input
                       type="number"
                       min="0"
-                      max={criterion.maxPoint}
-                      value={scores[criterion.id] || 0}
-                      onChange={(e) => handleScoreChange(criterion.id, e.target.value)}
+                      max={selectedCriterion.maxPoint}
+                      value={scores[selectedCriterion.id] || 0}
+                      onChange={(e) => handleScoreChange(selectedCriterion.id, e.target.value)}
                       className="score-input"
                       placeholder="0"
+                      disabled={!canEditScores}
                     />
-                  </td>
+                  </div>
+                ) : null}
 
-                  {/* Cột upload file */}
-                  <td className="col-evidence">
-                    <div className="evidence-upload">
-                      <input
-                        ref={(el) => (fileInputRefs.current[criterion.id] = el)}
-                        type="file"
-                        onChange={(e) => handleFileSelect(criterion.id, e)}
-                        className="file-input-hidden"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                      />
-                      <button 
-                        type="button" 
-                        className="file-button"
-                        onClick={() => handleFileButtonClick(criterion.id)}
-                      >
-                        📎 Chọn file
-                      </button>
+                <div className="criteria-input-block">
+                  <label className="criteria-inline-label">Minh chứng</label>
+                  <div className="evidence-upload">
+                    <input
+                      ref={(el) => (fileInputRefs.current[selectedCriterion.id] = el)}
+                      type="file"
+                      onChange={(e) => handleFileSelect(selectedCriterion.id, e)}
+                      className="file-input-hidden"
+                      accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip"
+                    />
+                    <button
+                      type="button"
+                      className="file-button"
+                      onClick={() => handleFileButtonClick(selectedCriterion.id)}
+                    >
+                      📎 Chọn file
+                    </button>
 
-                      {files[criterion.id] && (
-                        <div className="file-selected">
-                          <span className="file-name">{files[criterion.id].name}</span>
-                          <button
-                            type="button"
-                            className="file-remove"
-                            onClick={() => handleRemoveFile(criterion.id)}
-                            title="Xóa file"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {files[selectedCriterion.id] && (
+                      <div className="file-selected">
+                        <span className="file-name">{files[selectedCriterion.id].name}</span>
+                        <button
+                          type="button"
+                          className="file-remove"
+                          onClick={() => handleRemoveFile(selectedCriterion.id)}
+                          title="Xóa file"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <small className="evidence-format-note">
+                    Dinh dang cho phep: PDF, DOCX, XLSX, PNG, JPG, JPEG, ZIP.
+                  </small>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="no-criteria">Không có tiêu chí nào</div>
       )}
 
       {/* Tổng điểm */}
-      <div className="total-score-section">
-        <div className="total-score-display">
-          <span className="total-label">Tổng điểm:</span>
-          <span className="total-value">{totalScore}</span>
-          <span className="total-unit">điểm</span>
+      {showScores ? (
+        <div className="total-score-section">
+          <div className="total-score-display">
+            <span className="total-label">Tổng điểm:</span>
+            <span className="total-value">{totalScore}</span>
+            <span className="total-unit">điểm</span>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Nút submit */}
       {onSubmit && (

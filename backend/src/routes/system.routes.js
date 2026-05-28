@@ -4,6 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const { z } = require("zod");
 const { authenticate, authorize } = require("../middlewares/auth");
+const prisma = require("../lib/prisma");
+const { scanPendingEvidenceBatch } = require("../jobs/evidenceScan.job");
 
 const router = express.Router();
 
@@ -111,6 +113,72 @@ router.post("/backup", authenticate, authorize("ADMIN"), (req, res, next) => {
         filename,
       });
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/ops-summary", authenticate, authorize("ADMIN", "CANBO", "HOIDONG"), async (req, res, next) => {
+  try {
+    const now = new Date();
+    const [
+      pendingReviews,
+      overdueReviews,
+      evidencePending,
+      evidenceInfected,
+      evidenceScanError,
+      nominationsSubmitted,
+      nominationsRejected,
+    ] = await Promise.all([
+      prisma.reviewStep.count({ where: { decision: "PENDING" } }),
+      prisma.reviewStep.count({ where: { decision: "PENDING", dueAt: { lt: now } } }),
+      prisma.evidence.count({ where: { scanStatus: "PENDING_SCAN" } }),
+      prisma.evidence.count({ where: { scanStatus: "INFECTED" } }),
+      prisma.evidence.count({ where: { scanStatus: "SCAN_ERROR" } }),
+      prisma.nomination.count({ where: { status: "SUBMITTED" } }),
+      prisma.nomination.count({ where: { status: "REJECTED" } }),
+    ]);
+
+    return res.json({
+      pendingReviews,
+      overdueReviews,
+      evidencePending,
+      evidenceInfected,
+      evidenceScanError,
+      nominationsSubmitted,
+      nominationsRejected,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/scan-pending-evidence", authenticate, authorize("ADMIN"), async (req, res, next) => {
+  try {
+    const result = await scanPendingEvidenceBatch(50);
+    return res.json({ message: "Da kich hoat quet lai tep cho", ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/pending-evidence", authenticate, authorize("ADMIN"), async (req, res, next) => {
+  try {
+    const rows = await prisma.evidence.findMany({
+      where: { scanStatus: "PENDING_SCAN" },
+      include: {
+        nomination: {
+          select: {
+            id: true,
+            title: true,
+            applicant: { select: { id: true, fullName: true } },
+          },
+        },
+      },
+      orderBy: { uploadedAt: "asc" },
+      take: 200,
+    });
+    return res.json(rows);
   } catch (error) {
     return next(error);
   }

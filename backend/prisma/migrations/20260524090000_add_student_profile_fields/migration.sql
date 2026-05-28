@@ -1,0 +1,6 @@
+ALTER TABLE "User"
+ADD COLUMN IF NOT EXISTS "phone" TEXT,
+ADD COLUMN IF NOT EXISTS "studentCode" TEXT,
+ADD COLUMN IF NOT EXISTS "dateOfBirth" TIMESTAMP(3);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "User_studentCode_key" ON "User"("studentCode");

@@ -17,6 +17,9 @@ router.get("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
         email: true,
         role: true,
         department: true,
+        phone: true,
+        studentCode: true,
+        dateOfBirth: true,
         createdAt: true,
       },
     });
@@ -36,6 +39,9 @@ router.post("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
       role: z.enum(["ADMIN", "CANBO", "GIANGVIEN", "SINHVIEN", "HOIDONG"]),
       department: z.string().optional(),
       departmentId: z.number().int().positive().optional(),
+      phone: z.string().optional(),
+      studentCode: z.string().optional(),
+      dateOfBirth: z.string().optional(),
     });
     const data = schema.parse(req.body);
 
@@ -53,6 +59,9 @@ router.post("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
         role: data.role,
         department: data.department,
         departmentId: data.departmentId,
+        phone: data.phone || null,
+        studentCode: data.studentCode || null,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       },
       select: {
         id: true,
@@ -61,6 +70,9 @@ router.post("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
         role: true,
         department: true,
         departmentId: true,
+        phone: true,
+        studentCode: true,
+        dateOfBirth: true,
       },
     });
 
@@ -76,18 +88,26 @@ router.put("/:id", authenticate, authorize("ADMIN"), async (req, res, next) => {
     const id = Number(req.params.id);
     const schema = z.object({
       fullName: z.string().min(3).optional(),
+      email: z.string().email().optional(),
       role: z.enum(["ADMIN", "CANBO", "GIANGVIEN", "SINHVIEN", "HOIDONG"]).optional(),
       department: z.string().nullable().optional(),
       departmentId: z.number().int().positive().nullable().optional(),
       password: z.string().min(6).optional(),
+      phone: z.string().nullable().optional(),
+      studentCode: z.string().nullable().optional(),
+      dateOfBirth: z.string().nullable().optional(),
     });
     const data = schema.parse(req.body);
 
     const updateData = {
       fullName: data.fullName,
+      email: data.email,
       role: data.role,
       department: data.department === undefined ? undefined : data.department,
       departmentId: data.departmentId === undefined ? undefined : data.departmentId,
+      phone: data.phone === undefined ? undefined : data.phone,
+      studentCode: data.studentCode === undefined ? undefined : data.studentCode,
+      dateOfBirth: data.dateOfBirth === undefined ? undefined : data.dateOfBirth ? new Date(data.dateOfBirth) : null,
     };
 
     if (data.password) {
@@ -104,6 +124,9 @@ router.put("/:id", authenticate, authorize("ADMIN"), async (req, res, next) => {
         role: true,
         department: true,
         departmentId: true,
+        phone: true,
+        studentCode: true,
+        dateOfBirth: true,
       },
     });
 

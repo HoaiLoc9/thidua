@@ -4,9 +4,9 @@
 
 .error-message {
   padding: 12px;
-  background-color: #fee;
-  color: #c33;
-  border-left: 4px solid #c33;
+  background-color: var(--danger-soft);
+  color: var(--danger);
+  border-left: 4px solid var(--danger);
   border-radius: 4px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -15,16 +15,58 @@
 .no-criteria {
   text-align: center;
   padding: 32px 16px;
-  color: #666;
+  color: var(--text-soft);
   font-style: italic;
 }
 
-/* Bảng tiêu chí */
+.criteria-select-wrapper {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  background: var(--bg-panel);
+}
+
+.criteria-detail-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--bg-main);
+  display: grid;
+  gap: 10px;
+}
+
+.criteria-inputs-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.criteria-input-block {
+  display: grid;
+  gap: 6px;
+}
+
+.criteria-inline-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.evidence-format-note {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* Báº£ng tiÃªu chÃ­ */
 .criteria-table-wrapper {
   overflow-x: auto;
   margin-bottom: 20px;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--line);
 }
 
 .criteria-table {
@@ -34,27 +76,27 @@
 }
 
 .criteria-table thead {
-  background-color: #f5f5f5;
+  background-color: var(--primary-soft);
 }
 
 .criteria-table th {
   padding: 12px;
   text-align: left;
   font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #ddd;
+  color: var(--text-main);
+  border-bottom: 2px solid var(--line);
 }
 
 .criteria-table tbody tr {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--line);
   transition: background-color 0.2s;
 }
 
 .criteria-table tbody tr:hover {
-  background-color: #fafafa;
+  background-color: var(--bg-soft);
 }
 
-/* Cột tiêu chí */
+/* Cá»™t tiÃªu chÃ­ */
 .col-criteria {
   width: 45%;
   padding: 12px;
@@ -68,33 +110,33 @@
 
 .criteria-code {
   font-weight: 600;
-  color: #0066cc;
+  color: var(--primary);
   font-size: 13px;
 }
 
 .criteria-title {
   font-weight: 500;
-  color: #333;
+  color: var(--text-main);
 }
 
 .criteria-desc {
   font-size: 12px;
-  color: #666;
+  color: var(--text-soft);
   font-style: italic;
   margin: 4px 0;
 }
 
 .criteria-maxpoint {
   font-size: 12px;
-  color: #999;
+  color: var(--text-soft);
   margin-top: 4px;
 }
 
 .criteria-maxpoint strong {
-  color: #ff6600;
+  color: var(--accent);
 }
 
-/* Cột điểm */
+/* Cá»™t Ä‘iá»ƒm */
 .col-score {
   width: 15%;
   padding: 12px;
@@ -105,7 +147,7 @@
   width: 100%;
   max-width: 80px;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: 4px;
   font-size: 14px;
   text-align: center;
@@ -115,15 +157,15 @@
 
 .score-input:focus {
   outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.12);
 }
 
 .score-input:invalid {
-  border-color: #ff6666;
+  border-color: var(--danger);
 }
 
-/* Cột minh chứng */
+/* Cá»™t minh chá»©ng */
 .col-evidence {
   width: 40%;
   padding: 12px;
@@ -149,7 +191,7 @@
 .file-button {
   display: inline-block;
   padding: 6px 12px;
-  background-color: #007bff;
+  background-color: var(--primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -161,7 +203,7 @@
 }
 
 .file-button:hover {
-  background-color: #0056b3;
+  background-color: var(--primary-hover);
 }
 
 .file-button:active {
@@ -169,25 +211,25 @@
 }
 
 .file-button:disabled {
-  background-color: #ccc;
+  background-color: #cbd5e1;
   cursor: not-allowed;
   transform: none;
 }
 
-/* File đã chọn */
+/* File Ä‘Ã£ chá»n */
 .file-selected {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background-color: #e8f4f8;
-  border: 1px solid #b3e5fc;
+  background-color: var(--primary-soft);
+  border: 1px solid var(--line);
   border-radius: 4px;
 }
 
 .file-name {
   font-size: 12px;
-  color: #0056b3;
+  color: var(--primary-hover);
   font-weight: 500;
   word-break: break-word;
   max-width: 150px;
@@ -205,7 +247,7 @@
   padding: 0;
   background-color: transparent;
   border: none;
-  color: #0056b3;
+  color: var(--primary-hover);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
@@ -214,15 +256,15 @@
 }
 
 .file-remove:hover {
-  background-color: rgba(0, 86, 179, 0.1);
+  background-color: rgba(15, 76, 129, 0.1);
 }
 
-/* Tổng điểm */
+/* Tá»•ng Ä‘iá»ƒm */
 .total-score-section {
   padding: 16px;
-  background-color: #f9f9f9;
+  background-color: var(--bg-main);
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--line);
   margin-bottom: 16px;
 }
 
@@ -235,32 +277,32 @@
 
 .total-label {
   font-weight: 600;
-  color: #333;
+  color: var(--text-main);
 }
 
 .total-value {
   font-size: 24px;
   font-weight: 700;
-  color: #0066cc;
+  color: var(--primary);
 }
 
 .total-unit {
-  color: #666;
+  color: var(--text-soft);
   font-size: 14px;
 }
 
-/* Nút submit */
+/* NÃºt submit */
 .form-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--line);
 }
 
 .btn-submit {
   padding: 10px 24px;
-  background-color: #28a745;
+  background-color: var(--success);
   color: white;
   border: none;
   border-radius: 4px;
@@ -271,7 +313,7 @@
 }
 
 .btn-submit:hover:not(:disabled) {
-  background-color: #218838;
+  background-color: #166534;
 }
 
 .btn-submit:active:not(:disabled) {
@@ -279,13 +321,17 @@
 }
 
 .btn-submit:disabled {
-  background-color: #ccc;
+  background-color: #cbd5e1;
   cursor: not-allowed;
   transform: none;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .criteria-inputs-row {
+    grid-template-columns: 1fr;
+  }
+
   .criteria-table {
     font-size: 12px;
   }
@@ -332,3 +378,4 @@
     font-size: 20px;
   }
 }
+

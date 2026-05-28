@@ -39,6 +39,13 @@ enum ReviewDecision {
   REJECTED
 }
 
+enum EvidenceScanStatus {
+  PENDING_SCAN
+  CLEAN
+  INFECTED
+  SCAN_ERROR
+}
+
 model User {
   id           Int          @id @default(autoincrement())
   fullName     String
@@ -46,6 +53,9 @@ model User {
   passwordHash String
   role         Role
   department   String?
+  phone        String?
+  studentCode  String?      @unique
+  dateOfBirth  DateTime?
   departmentId Int?
   createdAt    DateTime     @default(now())
   departmentRef Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -83,6 +93,7 @@ model Criteria {
   description String?
   maxPoint    Int
   target      String           @default("SINHVIEN")
+  reviewLevel String           @default("DONVI")
   isTest      Boolean          @default(false)
   periodYear  Int?
   academicYearId Int?
@@ -90,6 +101,19 @@ model Criteria {
   createdAt   DateTime         @default(now())
   academicYear AcademicYear?   @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
   items       NominationItem[]
+  subItems    CriteriaSubItem[]
+}
+
+model CriteriaSubItem {
+  id          Int      @id @default(autoincrement())
+  criteriaId  Int
+  title       String
+  description String?
+  maxPoint    Int
+  sortOrder   Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  criteria    Criteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
 }
 
 model AwardType {
@@ -142,6 +166,8 @@ model ReviewStep {
   level        ReviewLevel
   decision     ReviewDecision @default(PENDING)
   comment      String?
+  dueAt        DateTime?
+  createdAt    DateTime       @default(now())
   reviewedAt   DateTime?
   nomination   Nomination     @relation(fields: [nominationId], references: [id], onDelete: Cascade)
   reviewer     User           @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
@@ -150,12 +176,16 @@ model ReviewStep {
 }
 
 model Evidence {
-  id           Int      @id @default(autoincrement())
+  id           Int                @id @default(autoincrement())
   nominationId Int
   fileUrl      String
   description  String?
-  uploadedAt   DateTime @default(now())
-  nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  scanStatus   EvidenceScanStatus @default(PENDING_SCAN)
+  fileHash     String?
+  scanDetail   String?
+  scannedAt    DateTime?
+  uploadedAt   DateTime           @default(now())
+  nomination   Nomination         @relation(fields: [nominationId], references: [id], onDelete: Cascade)
 }
 
 model ApprovalProcess {

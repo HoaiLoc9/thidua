@@ -3,14 +3,18 @@ import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import api from "./api/client";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RuleBasedChatbot from "./components/RuleBasedChatbot";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import CriteriaPage from "./pages/CriteriaPage";
 import NominationsPage from "./pages/NominationsPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import AwardsPage from "./pages/AwardsPage";
 import ReportsPage from "./pages/ReportsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -26,6 +30,7 @@ function MainLayout() {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved === "true";
   });
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const loadUnreadCount = async () => {
     try {
@@ -53,7 +58,7 @@ function MainLayout() {
     { path: "/", label: "Bảng điều khiển", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
     { path: "/profile", label: "Thông tin cá nhân", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
     { path: "/criteria", label: "Tiêu chí", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" },
-    { path: "/awards", label: "Danh hiệu", icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" },
+    { path: "/awards", label: "Danh hiệu & Khen thưởng", icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" },
     { path: "/nominations", label: "Hồ sơ", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
     { path: "/notifications", label: "Thông báo", icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" },
   ];
@@ -70,12 +75,10 @@ function MainLayout() {
       <header className="top-header">
         <div className="header-brand">
           <img src="/logo.png" alt="Logo hệ thống thi đua" className="header-logo" />
-          <div className="header-title">
-            <h2>RES IUH</h2>
-            <p>Hệ thống thi đua</p>
-          </div>
         </div>
-        <div className="header-contact">
+        <div className="header-title">
+          <h2>RES IUH</h2>
+          <p>Hệ thống thi đua</p>
         </div>
         <div className="header-actions">
           <Link to="/notifications" className="notification-icon" title="Thông báo">
@@ -85,11 +88,37 @@ function MainLayout() {
             </svg>
             {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
           </Link>
-          <Link to="/profile" className="user-logo" title="Trang cá nhân">
-            <div className="avatar-circle">
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
-          </Link>
+          <div className="profile-menu">
+            <button
+              type="button"
+              className="user-logo"
+              title="Tài khoản"
+              onClick={() => setProfileMenuOpen((value) => !value)}
+            >
+              <div className="avatar-circle">
+                {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
+              </div>
+            </button>
+            {profileMenuOpen ? (
+              <div className="profile-dropdown">
+                <Link to="/profile" onClick={() => setProfileMenuOpen(false)}>
+                  Thông tin cá nhân
+                </Link>
+                <Link to="/change-password" onClick={() => setProfileMenuOpen(false)}>
+                  Đổi mật khẩu
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    logout();
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -151,6 +180,7 @@ function MainLayout() {
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/criteria" element={<CriteriaPage />} />
           <Route path="/awards" element={<AwardsPage />} />
           <Route path="/nominations" element={<NominationsPage />} />
@@ -190,6 +220,7 @@ function MainLayout() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <RuleBasedChatbot />
     </div>
   );
 }
@@ -199,6 +230,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/*"
         element={

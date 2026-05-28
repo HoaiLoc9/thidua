@@ -28,6 +28,9 @@ export default function UsersPage() {
     role: "SINHVIEN",
     department: "",
     departmentId: "",
+    phone: "",
+    studentCode: "",
+    dateOfBirth: "",
   });
   const [message, setMessage] = useState("");
 
@@ -50,6 +53,9 @@ export default function UsersPage() {
       role: "SINHVIEN",
       department: "",
       departmentId: "",
+      phone: "",
+      studentCode: "",
+      dateOfBirth: "",
     });
   };
 
@@ -59,13 +65,16 @@ export default function UsersPage() {
 
     const payload = {
       fullName: form.fullName,
+      email: form.email,
       role: form.role,
       department: form.department || null,
       departmentId: form.departmentId ? Number(form.departmentId) : null,
+      phone: form.phone || null,
+      studentCode: form.studentCode || null,
+      dateOfBirth: form.dateOfBirth || null,
     };
 
     if (!editingId) {
-      payload.email = form.email;
       payload.password = form.password;
       await api.post("/users", payload);
       setMessage("Tạo người dùng thành công");
@@ -97,6 +106,9 @@ export default function UsersPage() {
       role: user.role,
       department: user.department || "",
       departmentId: user.departmentId || "",
+      phone: user.phone || "",
+      studentCode: user.studentCode || "",
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "",
     });
     // bring the form into view and focus the first input for better UX
     setTimeout(() => {
@@ -127,7 +139,7 @@ export default function UsersPage() {
       <form className="card" onSubmit={onSubmit}>
         <h2>{editingId ? "Cập nhật người dùng" : "Tạo người dùng mới"}</h2>
         {message ? (
-          <div role="status" aria-live="polite" style={{ margin: "0.5rem 0", color: "#155724", background: "#d4edda", padding: "0.5rem", borderRadius: 6 }}>
+          <div role="status" aria-live="polite" style={{ margin: "0.5rem 0", color: "var(--success)", background: "var(--success-soft)", padding: "0.5rem", borderRadius: 6 }}>
             {message}
           </div>
         ) : null}
@@ -142,8 +154,22 @@ export default function UsersPage() {
           placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required={!editingId}
-          disabled={Boolean(editingId)}
+          required
+        />
+        <input
+          placeholder="Số điện thoại"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
+        <input
+          placeholder="Mã số sinh viên"
+          value={form.studentCode}
+          onChange={(e) => setForm({ ...form, studentCode: e.target.value })}
+        />
+        <input
+          type="date"
+          value={form.dateOfBirth}
+          onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
         />
         <input
           type="password"
@@ -207,6 +233,9 @@ export default function UsersPage() {
             <tr>
               <th>Họ tên</th>
               <th>Email</th>
+              <th>Số điện thoại</th>
+              <th>Mã số SV</th>
+              <th>Ngày sinh</th>
               <th>Vai trò</th>
               <th>Đơn vị</th>
               <th>Thao tác</th>
@@ -217,6 +246,9 @@ export default function UsersPage() {
               <tr key={user.id}>
                 <td>{user.fullName}</td>
                 <td>{user.email}</td>
+                <td>{user.phone || "-"}</td>
+                <td>{user.studentCode || "-"}</td>
+                <td>{user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "-"}</td>
                 <td>{user.role}</td>
                 <td>{user.department || "-"}</td>
                 <td>

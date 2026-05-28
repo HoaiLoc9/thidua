@@ -2,28 +2,58 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const crypto = require("crypto");
 const { z } = require("zod");
 const prisma = require("../lib/prisma");
 const { authenticate } = require("../middlewares/auth");
 const { logAudit } = require("../utils/audit");
 const { createNotification } = require("../utils/notify");
+const { assertFileSignature, calculateSHA256, scanFileWithClamAV } = require("../utils/fileSecurity");
 
 const router = express.Router();
 
 const evidenceDir = path.join(__dirname, "..", "..", "uploads", "evidences");
+const quarantineDir = path.join(__dirname, "..", "..", "uploads", "quarantine");
 fs.mkdirSync(evidenceDir, { recursive: true });
+fs.mkdirSync(quarantineDir, { recursive: true });
+
+const allowedEvidenceExtensions = new Set([".pdf", ".docx", ".xlsx", ".png", ".jpg", ".jpeg", ".zip"]);
+const allowedEvidenceMimeTypes = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/png",
+  "image/jpeg",
+  "application/zip",
+  "application/x-zip-compressed",
+  "multipart/x-zip",
+]);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, evidenceDir),
+  destination: (req, file, cb) => cb(null, quarantineDir),
   filename: (req, file, cb) => {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_");
-    cb(null, `${Date.now()}-${safeName}`);
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    cb(null, `${Date.now()}-${crypto.randomUUID()}${extension}`);
   },
 });
 
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    const isAllowedExtension = allowedEvidenceExtensions.has(extension);
+    const isAllowedMime = allowedEvidenceMimeTypes.has((file.mimetype || "").toLowerCase());
+
+    if (isAllowedExtension && isAllowedMime) {
+      cb(null, true);
+      return;
+    }
+
+    const validationError = new Error("Chi duoc nop minh chung dang PDF, DOCX, XLSX, PNG/JPG hoac ZIP");
+    validationError.status = 400;
+    cb(validationError);
+  },
 });
 
 const itemSchema = z.object({
@@ -38,8 +68,77 @@ const nominationSchema = z.object({
   items: z.array(itemSchema).min(1),
 });
 
+async function secureUploadedFile(file) {
+  if (!file) {
+    const error = new Error("Vui long chon tep minh chung");
+    error.status = 400;
+    throw error;
+  }
+
+  const extension = path.extname(file.originalname || "").toLowerCase();
+  await assertFileSignature(file.path, extension);
+
+  const hash = await calculateSHA256(file.path);
+  const scanResult = await scanFileWithClamAV(file.path);
+  // Default best-effort mode: if ClamAV is temporarily unavailable, keep file as pending scan
+  // to avoid blocking user workflow. Set ALLOW_UNSCANNED_UPLOADS=false for strict mode.
+  const allowPendingOnScanError = process.env.ALLOW_UNSCANNED_UPLOADS !== "false";
+
+  if (scanResult.status === "INFECTED") {
+    await fs.promises.unlink(file.path).catch(() => null);
+    const error = new Error("Tep tai len bi phat hien ma doc va da bi tu choi");
+    error.status = 400;
+    throw error;
+  }
+
+  if (scanResult.status === "SCAN_ERROR" && !allowPendingOnScanError) {
+    await fs.promises.unlink(file.path).catch(() => null);
+    const error = new Error("Khong the quet ma doc luc nay. Vui long thu lai sau");
+    error.status = 503;
+    throw error;
+  }
+
+  const finalPath = path.join(evidenceDir, file.filename);
+  await fs.promises.rename(file.path, finalPath);
+
+  return {
+    fileUrl: `/uploads/evidences/${file.filename}`,
+    fileHash: hash,
+    scanStatus: scanResult.status === "CLEAN" ? "CLEAN" : "PENDING_SCAN",
+    scanDetail: scanResult.status === "SCAN_ERROR" ? scanResult.detail : scanResult.detail || null,
+    scannedAt: scanResult.status === "CLEAN" ? new Date() : null,
+  };
+}
+
 async function calculateTotal(items) {
   return items.reduce((sum, item) => sum + item.selfPoint, 0);
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function resolveDueDateByLevel(level) {
+  const now = new Date();
+  const dayByLevel = {
+    DONVI: Number(process.env.REVIEW_DUE_DONVI_DAYS || 3),
+    KHOA: Number(process.env.REVIEW_DUE_KHOA_DAYS || 5),
+    TRUONG: Number(process.env.REVIEW_DUE_TRUONG_DAYS || 7),
+  };
+  return addDays(now, dayByLevel[level] || 5);
+}
+
+function normalizeItemsForRole(items, role) {
+  if (role !== "SINHVIEN") {
+    return items;
+  }
+
+  return items.map((item) => ({
+    ...item,
+    selfPoint: 0,
+  }));
 }
 
 router.get("/", authenticate, async (req, res, next) => {
@@ -56,7 +155,13 @@ router.get("/", authenticate, async (req, res, next) => {
         },
         items: {
           include: {
-            criteria: true,
+            criteria: {
+              include: {
+                subItems: {
+                  orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+                },
+              },
+            },
           },
         },
         reviews: {
@@ -71,7 +176,7 @@ router.get("/", authenticate, async (req, res, next) => {
           orderBy: { uploadedAt: "desc" },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
     });
 
     return res.json(data);
@@ -87,7 +192,8 @@ router.post("/", authenticate, async (req, res, next) => {
     }
 
     const payload = nominationSchema.parse(req.body);
-    const totalSelfPoint = await calculateTotal(payload.items);
+    const items = normalizeItemsForRole(payload.items, req.user.role);
+    const totalSelfPoint = await calculateTotal(items);
 
     const created = await prisma.$transaction(async (tx) => {
       const nomination = await tx.nomination.create({
@@ -97,7 +203,7 @@ router.post("/", authenticate, async (req, res, next) => {
           applicantId: req.user.id,
           totalSelfPoint,
           items: {
-            create: payload.items,
+            create: items,
           },
         },
         include: {
@@ -105,12 +211,13 @@ router.post("/", authenticate, async (req, res, next) => {
         },
       });
 
-      const evidenceRows = payload.items
+      const evidenceRows = items
         .filter((item) => item.evidence && item.evidence.trim())
         .map((item) => ({
           nominationId: nomination.id,
           fileUrl: item.evidence.trim(),
           description: `Minh chung tieu chi ${item.criteriaId}`,
+          scanStatus: "CLEAN",
         }));
 
       if (evidenceRows.length) {
@@ -146,7 +253,8 @@ router.put("/:id", authenticate, async (req, res, next) => {
       return res.status(400).json({ message: "Chi ho so DRAFT moi duoc cap nhat" });
     }
 
-    const totalSelfPoint = await calculateTotal(payload.items);
+    const items = normalizeItemsForRole(payload.items, req.user.role);
+    const totalSelfPoint = await calculateTotal(items);
 
     const updated = await prisma.$transaction(async (tx) => {
       const nomination = await tx.nomination.update({
@@ -157,7 +265,7 @@ router.put("/:id", authenticate, async (req, res, next) => {
           totalSelfPoint,
           items: {
             deleteMany: {},
-            create: payload.items,
+            create: items,
           },
         },
         include: {
@@ -166,12 +274,13 @@ router.put("/:id", authenticate, async (req, res, next) => {
       });
 
       await tx.evidence.deleteMany({ where: { nominationId: id } });
-      const evidenceRows = payload.items
+      const evidenceRows = items
         .filter((item) => item.evidence && item.evidence.trim())
         .map((item) => ({
           nominationId: id,
           fileUrl: item.evidence.trim(),
           description: `Minh chung tieu chi ${item.criteriaId}`,
+          scanStatus: "CLEAN",
         }));
 
       if (evidenceRows.length) {
@@ -268,6 +377,7 @@ router.post("/:id/submit", authenticate, async (req, res, next) => {
           nominationId: id,
           reviewerId: r.reviewerId,
           level: r.level,
+          dueAt: resolveDueDateByLevel(r.level),
         })),
       });
 
@@ -291,7 +401,13 @@ router.post("/:id/submit", authenticate, async (req, res, next) => {
 router.post("/:id/reopen", authenticate, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const nomination = await prisma.nomination.findUnique({ where: { id } });
+    const nomination = await prisma.nomination.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        evidences: true,
+      },
+    });
 
     if (!nomination) {
       return res.status(404).json({ message: "Khong tim thay ho so" });
@@ -306,15 +422,42 @@ router.post("/:id/reopen", authenticate, async (req, res, next) => {
     }
 
     const reopened = await prisma.$transaction(async (tx) => {
-      await tx.reviewStep.deleteMany({ where: { nominationId: id } });
-      await tx.approvalResult.deleteMany({ where: { nominationId: id } });
-      return tx.nomination.update({
-        where: { id },
-        data: { status: "DRAFT" },
+      const recreated = await tx.nomination.create({
+        data: {
+          title: nomination.title,
+          periodYear: nomination.periodYear,
+          academicYearId: nomination.academicYearId,
+          applicantId: nomination.applicantId,
+          totalSelfPoint: nomination.totalSelfPoint,
+          status: "DRAFT",
+          items: {
+            create: nomination.items.map((item) => ({
+              criteriaId: item.criteriaId,
+              selfPoint: item.selfPoint,
+              evidence: item.evidence,
+            })),
+          },
+        },
       });
+
+      if (nomination.evidences.length) {
+        await tx.evidence.createMany({
+          data: nomination.evidences.map((ev) => ({
+            nominationId: recreated.id,
+            fileUrl: ev.fileUrl,
+            description: ev.description,
+            scanStatus: ev.scanStatus,
+            fileHash: ev.fileHash,
+            scanDetail: ev.scanDetail,
+            scannedAt: ev.scannedAt,
+          })),
+        });
+      }
+
+      return recreated;
     });
 
-    await logAudit(req.user.id, "REOPEN_NOMINATION", `Reopened nomination ${id}`);
+    await logAudit(req.user.id, "REOPEN_NOMINATION", `Created nomination ${reopened.id} from rejected nomination ${id}`);
     return res.json(reopened);
   } catch (error) {
     return next(error);
@@ -323,12 +466,8 @@ router.post("/:id/reopen", authenticate, async (req, res, next) => {
 
 router.post("/upload-evidence", authenticate, upload.single("file"), async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Vui long chon tep minh chung" });
-    }
-
-    const fileUrl = `/uploads/evidences/${req.file.filename}`;
-    return res.status(201).json({ fileUrl });
+    const secured = await secureUploadedFile(req.file);
+    return res.status(201).json(secured);
   } catch (error) {
     return next(error);
   }
@@ -346,20 +485,107 @@ router.post("/:id/evidences", authenticate, upload.single("file"), async (req, r
       return res.status(403).json({ message: "Khong co quyen cap nhat minh chung" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Vui long chon tep minh chung" });
-    }
+    const secured = await secureUploadedFile(req.file);
 
     const evidence = await prisma.evidence.create({
       data: {
         nominationId: id,
-        fileUrl: `/uploads/evidences/${req.file.filename}`,
+        fileUrl: secured.fileUrl,
         description: req.body.description || "",
+        scanStatus: secured.scanStatus,
+        fileHash: secured.fileHash,
+        scanDetail: secured.scanDetail,
+        scannedAt: secured.scannedAt,
       },
     });
 
     await logAudit(req.user.id, "UPLOAD_EVIDENCE", `Uploaded evidence for nomination ${id}`);
     return res.status(201).json(evidence);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/evidences/:evidenceId/download", authenticate, async (req, res, next) => {
+  try {
+    const evidenceId = Number(req.params.evidenceId);
+    const evidence = await prisma.evidence.findUnique({
+      where: { id: evidenceId },
+      include: {
+        nomination: {
+          select: {
+            applicantId: true,
+          },
+        },
+      },
+    });
+
+    if (!evidence) {
+      return res.status(404).json({ message: "Khong tim thay tep minh chung" });
+    }
+
+    const canReview = ["ADMIN", "CANBO", "HOIDONG"].includes(req.user.role);
+    const isOwner = evidence.nomination?.applicantId === req.user.id;
+    if (!canReview && !isOwner) {
+      return res.status(403).json({ message: "Khong co quyen tai tep nay" });
+    }
+
+    if (evidence.scanStatus !== "CLEAN") {
+      return res.status(423).json({ message: "Tep chua dat trang thai an toan de tai xuong" });
+    }
+
+    const relativeFilePath = evidence.fileUrl.replace(/^\/+/, "");
+    const filePath = path.join(__dirname, "..", "..", relativeFilePath);
+    await fs.promises.access(filePath, fs.constants.F_OK);
+
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    await logAudit(req.user.id, "DOWNLOAD_EVIDENCE", `Downloaded evidence ${evidenceId}`);
+    return res.download(filePath);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete("/:id/evidences/:evidenceId", authenticate, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const evidenceId = Number(req.params.evidenceId);
+
+    const nomination = await prisma.nomination.findUnique({ where: { id } });
+    if (!nomination) {
+      return res.status(404).json({ message: "Khong tim thay ho so" });
+    }
+
+    if (nomination.applicantId !== req.user.id) {
+      return res.status(403).json({ message: "Khong co quyen cap nhat minh chung" });
+    }
+
+    if (nomination.status === "APPROVED") {
+      return res.status(400).json({ message: "Ho so da duoc duyet, khong the xoa minh chung" });
+    }
+
+    const evidence = await prisma.evidence.findFirst({
+      where: {
+        id: evidenceId,
+        nominationId: id,
+      },
+    });
+
+    if (!evidence) {
+      return res.status(404).json({ message: "Khong tim thay tep minh chung" });
+    }
+
+    await prisma.evidence.delete({ where: { id: evidenceId } });
+
+    if (evidence.fileUrl?.startsWith("/uploads/evidences/")) {
+      const relativeFilePath = evidence.fileUrl.replace(/^\/+/, "");
+      const filePath = path.join(__dirname, "..", "..", relativeFilePath);
+      fs.promises.unlink(filePath).catch(() => null);
+    }
+
+    await logAudit(req.user.id, "DELETE_EVIDENCE", `Deleted evidence ${evidenceId} for nomination ${id}`);
+
+    return res.json({ message: "Da xoa tep minh chung" });
   } catch (error) {
     return next(error);
   }

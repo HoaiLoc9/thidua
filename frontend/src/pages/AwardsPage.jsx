@@ -14,6 +14,8 @@ export default function AwardsPage() {
   const { user } = useAuth();
   const [awards, setAwards] = useState([]);
   const [form, setForm] = useState(initialForm);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const canManage = ["ADMIN", "HOIDONG"].includes(user.role);
 
@@ -23,21 +25,37 @@ export default function AwardsPage() {
   };
 
   useEffect(() => {
-    load();
+    load().catch(() => setError("Không tải được danh mục danh hiệu và khen thưởng."));
   }, []);
 
   const createAward = async (e) => {
     e.preventDefault();
-    await api.post("/awards", { ...form, periodYear: Number(form.periodYear) });
-    setForm(initialForm);
-    load();
+    setError("");
+    setMessage("");
+
+    try {
+      await api.post("/awards", { ...form, periodYear: Number(form.periodYear) });
+      setForm(initialForm);
+      setMessage("Đã thêm danh hiệu/khen thưởng.");
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Không thêm được danh hiệu/khen thưởng.");
+    }
   };
 
   return (
     <div className="page-grid">
+      {error ? <div className="card error-message">{error}</div> : null}
+      {message ? <div className="card">{message}</div> : null}
+
       {canManage ? (
         <form className="card form-card" onSubmit={createAward}>
-          <h2>Quản lý danh hiệu/khen thưởng</h2>
+          <h2>Danh hiệu & Khen thưởng</h2>
+          <p>
+            Quản lý các danh hiệu hoặc hình thức khen thưởng mà hồ sơ có thể đăng ký
+            hoặc được hội đồng xét duyệt cuối cùng.
+          </p>
+
           <div className="form-grid">
             <label className="field-group">
               <span>Mã</span>
@@ -48,7 +66,7 @@ export default function AwardsPage() {
                 maxLength="30"
                 required
               />
-              <small>Mã ngắn để định danh danh hiệu/khen thưởng. (Tối đa 30 ký tự)</small>
+              <small>Mã ngắn để định danh danh hiệu/khen thưởng. Tối đa 30 ký tự.</small>
             </label>
 
             <label className="field-group">
@@ -64,7 +82,7 @@ export default function AwardsPage() {
             </label>
 
             <label className="field-group form-span-2">
-              <span>Tên</span>
+              <span>Tên danh hiệu/khen thưởng</span>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -72,7 +90,7 @@ export default function AwardsPage() {
                 maxLength="100"
                 required
               />
-              <small>Tên hiển thị khi chọn danh hiệu/khen thưởng. (Tối đa 100 ký tự)</small>
+              <small>Tên hiển thị khi người dùng đăng ký hoặc hội đồng xét duyệt. Tối đa 100 ký tự.</small>
             </label>
 
             <label className="field-group form-span-2">
@@ -91,9 +109,9 @@ export default function AwardsPage() {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 maxLength="500"
-                placeholder="Mô tả ngắn về danh hiệu/khen thưởng"
+                placeholder="Mô tả ngắn về điều kiện hoặc phạm vi áp dụng"
               />
-              <small>Mô tả chi tiết. (Tối đa 500 ký tự)</small>
+              <small>Mô tả chi tiết. Tối đa 500 ký tự.</small>
             </label>
           </div>
 
@@ -104,23 +122,27 @@ export default function AwardsPage() {
       ) : null}
 
       <div className="card">
-        <h2>Danh mục danh hiệu thi đua</h2>
+        <h2>Danh mục Danh hiệu & Khen thưởng</h2>
+        <p>
+          Đây là danh sách các danh hiệu hoặc hình thức khen thưởng đang được áp dụng
+          trong hệ thống.
+        </p>
         <table>
           <thead>
             <tr>
               <th>Mã</th>
               <th>Tên</th>
               <th>Loại</th>
-              <th>Năm học</th>
+              <th>Năm áp dụng</th>
             </tr>
           </thead>
           <tbody>
-            {awards.map((a) => (
-              <tr key={a.id}>
-                <td>{a.code}</td>
-                <td>{a.name}</td>
-                <td>{a.category}</td>
-                <td>{a.periodYear}</td>
+            {awards.map((award) => (
+              <tr key={award.id}>
+                <td>{award.code}</td>
+                <td>{award.name}</td>
+                <td>{award.category}</td>
+                <td>{award.periodYear}</td>
               </tr>
             ))}
           </tbody>
