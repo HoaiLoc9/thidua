@@ -61,7 +61,7 @@
   color: var(--text-soft);
 }
 
-/* Báº£ng tiÃªu chÃ­ */
+/* Bảng tiêu chí */
 .criteria-table-wrapper {
   overflow-x: auto;
   margin-bottom: 20px;
@@ -96,7 +96,7 @@
   background-color: var(--bg-soft);
 }
 
-/* Cá»™t tiÃªu chÃ­ */
+/* Cột tiêu chí */
 .col-criteria {
   width: 45%;
   padding: 12px;
@@ -136,7 +136,7 @@
   color: var(--accent);
 }
 
-/* Cá»™t Ä‘iá»ƒm */
+/* Cột điểm */
 .col-score {
   width: 15%;
   padding: 12px;
@@ -165,7 +165,7 @@
   border-color: var(--danger);
 }
 
-/* Cá»™t minh chá»©ng */
+/* Cột minh chứng */
 .col-evidence {
   width: 40%;
   padding: 12px;
@@ -216,7 +216,7 @@
   transform: none;
 }
 
-/* File Ä‘Ã£ chá»n */
+/* File đã chọn */
 .file-selected {
   display: flex;
   align-items: center;
@@ -259,7 +259,7 @@
   background-color: rgba(15, 76, 129, 0.1);
 }
 
-/* Tá»•ng Ä‘iá»ƒm */
+/* Tổng điểm */
 .total-score-section {
   padding: 16px;
   background-color: var(--bg-main);
@@ -291,7 +291,7 @@
   font-size: 14px;
 }
 
-/* NÃºt submit */
+/* Nút submit */
 .form-actions {
   display: flex;
   gap: 8px;

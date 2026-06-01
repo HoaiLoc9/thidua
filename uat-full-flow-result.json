@@ -1,0 +1,201 @@
+{
+  "steps": [
+    {
+      "step": "check_attached_pdf_files",
+      "status": "PASS",
+      "files": [
+        "C:/Users/LENOVO/Downloads/bao-cao-thi-dua (3).pdf",
+        "C:/Users/LENOVO/Downloads/bao-cao-thi-dua (2).pdf"
+      ]
+    },
+    {
+      "step": "admin_login_for_council_list",
+      "status": "PASS",
+      "user": "admin@iuh.edu.vn"
+    },
+    {
+      "step": "get_all_council_accounts",
+      "status": "PASS",
+      "councilUsers": [
+        "hoidong1@iuh.edu.vn",
+        "hoidong2@iuh.edu.vn",
+        "hoidong3@iuh.edu.vn",
+        "hoidong4@iuh.edu.vn",
+        "hoidong5@iuh.edu.vn"
+      ],
+      "count": 5
+    },
+    {
+      "step": "student_login",
+      "status": "PASS",
+      "user": "hoailoc0505@gmail.com"
+    },
+    {
+      "step": "select_award_with_criteria",
+      "status": "PASS",
+      "awardCode": "DHTD_LDTT",
+      "awardName": "Lao dong tien tien",
+      "criteriaCount": 2
+    },
+    {
+      "step": "upload_and_clamav_scan_1",
+      "status": "PASS",
+      "fileName": "bao-cao-thi-dua (3).pdf",
+      "scanStatus": "CLEAN",
+      "scanDetail": "OK",
+      "fileHash": "003fa86bb8f97794b5c73e2f0a38703f285120cbff2bc69dade3f69eabe230de"
+    },
+    {
+      "step": "upload_and_clamav_scan_2",
+      "status": "PASS",
+      "fileName": "bao-cao-thi-dua (2).pdf",
+      "scanStatus": "CLEAN",
+      "scanDetail": "OK",
+      "fileHash": "22059293eb8ab2f3b073f017ad1b63977dd75c14f49adbc2dd0cb02e6856001e"
+    },
+    {
+      "step": "student_create_draft_nomination",
+      "status": "DRAFT",
+      "nominationId": 64
+    },
+    {
+      "step": "student_submit_nomination",
+      "status": "PASS",
+      "nominationId": 64,
+      "responseStatus": "SUBMITTED"
+    },
+    {
+      "step": "faculty_officer_login",
+      "status": "PASS",
+      "user": "canbo1@iuh.edu.vn"
+    },
+    {
+      "step": "faculty_officer_can_see_pending_review",
+      "status": "PASS",
+      "reviewId": 100,
+      "level": "KHOA"
+    },
+    {
+      "step": "faculty_score_each_evidence_and_approve",
+      "status": "PASS",
+      "reviewId": 100,
+      "scores": [
+        {
+          "evidenceId": 70,
+          "score": 45
+        },
+        {
+          "evidenceId": 71,
+          "score": 40
+        }
+      ],
+      "emailSent": true,
+      "emailReason": null,
+      "emailTo": "hoailoc0505@gmail.com"
+    },
+    {
+      "step": "council_login_hoidong1@iuh.edu.vn",
+      "status": "PASS"
+    },
+    {
+      "step": "council_login_hoidong2@iuh.edu.vn",
+      "status": "PASS"
+    },
+    {
+      "step": "council_login_hoidong3@iuh.edu.vn",
+      "status": "PASS"
+    },
+    {
+      "step": "council_login_hoidong4@iuh.edu.vn",
+      "status": "PASS"
+    },
+    {
+      "step": "council_login_hoidong5@iuh.edu.vn",
+      "status": "PASS"
+    },
+    {
+      "step": "council_can_see_pending_review",
+      "status": "PASS",
+      "reviewId": 101,
+      "level": "TRUONG"
+    },
+    {
+      "step": "council_vote_hoidong1@iuh.edu.vn",
+      "status": "PASS",
+      "choice": "AGREE"
+    },
+    {
+      "step": "council_vote_hoidong2@iuh.edu.vn",
+      "status": "PASS",
+      "choice": "AGREE"
+    },
+    {
+      "step": "council_vote_hoidong3@iuh.edu.vn",
+      "status": "PASS",
+      "choice": "AGREE"
+    },
+    {
+      "step": "council_vote_hoidong4@iuh.edu.vn",
+      "status": "PASS",
+      "choice": "AGREE"
+    },
+    {
+      "step": "council_vote_hoidong5@iuh.edu.vn",
+      "status": "PASS",
+      "choice": "AGREE"
+    },
+    {
+      "step": "council_vote_summary",
+      "status": "PASS",
+      "voteSummary": {
+        "memberCount": 5,
+        "votedCount": 5,
+        "agreeCount": 5,
+        "disagreeCount": 0,
+        "reviewAgainCount": 0,
+        "agreeRatio": 1,
+        "passThreshold": 3,
+        "passed": true,
+        "rejectedByVote": false,
+        "needsMoreVotes": false,
+        "isTie": false
+      },
+      "finalizer": "hoidong1@iuh.edu.vn"
+    },
+    {
+      "step": "council_finalize_result",
+      "status": "PASS",
+      "finalizer": "hoidong1@iuh.edu.vn",
+      "decision": "APPROVED",
+      "emailSent": true,
+      "emailReason": null,
+      "emailTo": "hoailoc0505@gmail.com"
+    },
+    {
+      "step": "student_check_final_nomination_status",
+      "status": "APPROVED",
+      "nominationId": 64,
+      "totalSelfPoint": 85
+    }
+  ],
+  "errors": [],
+  "summary": {
+    "nominationId": 64,
+    "awardCode": "DHTD_LDTT",
+    "awardName": "Lao dong tien tien",
+    "councilUsersTested": [
+      "hoidong1@iuh.edu.vn",
+      "hoidong2@iuh.edu.vn",
+      "hoidong3@iuh.edu.vn",
+      "hoidong4@iuh.edu.vn",
+      "hoidong5@iuh.edu.vn"
+    ],
+    "councilVoteCount": 5,
+    "councilAgreeCount": 5,
+    "finalStatus": "APPROVED",
+    "totalSelfPoint": 85,
+    "facultyEmailSent": true,
+    "councilEmailSent": true,
+    "councilEmailTo": "hoailoc0505@gmail.com"
+  }
+}

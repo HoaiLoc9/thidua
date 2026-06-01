@@ -21,8 +21,11 @@ export default function ForgotPasswordPage() {
       const { data } = await api.post("/auth/forgot-password", { email });
       setMessage(
         data.message ||
-          "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn khôi phục mật khẩu. Vui lòng kiểm tra hộp thư của bạn."
+          "Nếu email tồn tại, chúng tôi đã gửi mã OTP đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn."
       );
+      setTimeout(() => {
+        navigate(`/reset-password?email=${encodeURIComponent(email)}`);
+      }, 900);
     } catch (err) {
       setError(err.response?.data?.message || "Không thể gửi yêu cầu quên mật khẩu.");
     } finally {
@@ -37,7 +40,7 @@ export default function ForgotPasswordPage() {
           <div className="login-brand">
             <img className="login-logo" src={logo} alt="Logo" />
             <h1>Quên mật khẩu</h1>
-            <p>Nhập email tài khoản để nhận liên kết đặt lại mật khẩu.</p>
+            <p>Nhập email tài khoản để nhận mã OTP đặt lại mật khẩu.</p>
           </div>
 
           <form onSubmit={handleSubmit}>

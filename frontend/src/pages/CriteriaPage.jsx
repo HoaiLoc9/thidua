@@ -3,7 +3,6 @@ import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 const levelLabels = {
-  DONVI: "Cấp đơn vị",
   KHOA: "Cấp khoa",
   TRUONG: "Cấp trường / hội đồng",
 };
@@ -19,13 +18,14 @@ const initialForm = {
   description: "",
   maxPoint: 10,
   target: "SINHVIEN",
-  reviewLevel: "DONVI",
+  reviewLevel: "KHOA",
 };
 
 export default function CriteriaPage() {
   const { user } = useAuth();
   const [list, setList] = useState([]);
   const [form, setForm] = useState(initialForm);
+  const [editingCriteriaId, setEditingCriteriaId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [creatingCriteriaId, setCreatingCriteriaId] = useState(null);
@@ -51,24 +51,63 @@ export default function CriteriaPage() {
     load().catch(() => setError("Không tải được danh sách tiêu chí."));
   }, []);
 
+  const resetCriteriaForm = () => {
+    setForm(initialForm);
+    setEditingCriteriaId(null);
+  };
+
   const addCriteria = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
 
     try {
-      await api.post("/criteria", { ...form, maxPoint: Number(form.maxPoint) });
-      setForm(initialForm);
-      setMessage("Đã lưu tiêu chí.");
+      const payload = { ...form, maxPoint: Number(form.maxPoint) };
+      if (editingCriteriaId) {
+        await api.put(`/criteria/${editingCriteriaId}`, payload);
+        setMessage("Đã cập nhật tiêu chí.");
+      } else {
+        await api.post("/criteria", payload);
+        setMessage("Đã lưu tiêu chí.");
+      }
+      resetCriteriaForm();
       await load();
     } catch (err) {
       setError(err?.response?.data?.message || "Không lưu được tiêu chí. Kiểm tra lại dữ liệu hoặc quyền đăng nhập.");
     }
   };
 
+  const startEditCriteria = (item) => {
+    setError("");
+    setMessage("");
+    setEditingCriteriaId(item.id);
+    setForm({
+      code: item.code || "",
+      title: item.title || "",
+      description: item.description || "",
+      maxPoint: item.maxPoint || 1,
+      target: item.target || "SINHVIEN",
+      reviewLevel: item.reviewLevel || "KHOA",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const removeCriteria = async (id) => {
-    await api.delete(`/criteria/${id}`);
-    load();
+    const confirmed = window.confirm("Bạn có chắc muốn xóa tiêu chí này khỏi danh sách đang sử dụng?");
+    if (!confirmed) return;
+
+    setError("");
+    setMessage("");
+    try {
+      await api.delete(`/criteria/${id}`);
+      setMessage("Đã xóa tiêu chí.");
+      if (editingCriteriaId === id) {
+        resetCriteriaForm();
+      }
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Không xóa được tiêu chí.");
+    }
   };
 
   const addSubItem = async (criteriaId) => {
@@ -201,7 +240,7 @@ export default function CriteriaPage() {
     }
   };
 
-  const grouped = ["DONVI", "KHOA", "TRUONG"].map((level) => ({
+  const grouped = ["KHOA", "TRUONG"].map((level) => ({
     level,
     items: list.filter((item) => item.reviewLevel === level),
   }));
@@ -212,7 +251,7 @@ export default function CriteriaPage() {
       {message ? <div className="card">{message}</div> : null}
       {canEdit ? (
         <form className="card form-card" onSubmit={addCriteria}>
-          <h2>Thêm tiêu chí theo cấp duyệt</h2>
+          <h2>{editingCriteriaId ? "Chỉnh sửa tiêu chí" : "Thêm tiêu chí theo cấp duyệt"}</h2>
           <div className="form-grid">
             <label className="field-group">
               <span>Mã tiêu chí</span>
@@ -248,7 +287,6 @@ export default function CriteriaPage() {
             <label className="field-group">
               <span>Cấp xét duyệt</span>
               <select value={form.reviewLevel} onChange={(e) => setForm({ ...form, reviewLevel: e.target.value })}>
-                <option value="DONVI">{levelLabels.DONVI}</option>
                 <option value="KHOA">{levelLabels.KHOA}</option>
                 <option value="TRUONG">{levelLabels.TRUONG}</option>
               </select>
@@ -278,7 +316,12 @@ export default function CriteriaPage() {
           </div>
 
           <div className="form-actions">
-            <button type="submit">Lưu tiêu chí</button>
+            <button type="submit">{editingCriteriaId ? "Cập nhật tiêu chí" : "Lưu tiêu chí"}</button>
+            {editingCriteriaId ? (
+              <button type="button" className="secondary" onClick={resetCriteriaForm}>
+                Hủy sửa
+              </button>
+            ) : null}
           </div>
         </form>
       ) : null}
@@ -454,8 +497,11 @@ export default function CriteriaPage() {
                     <td>{targetLabels[item.target] || item.target}</td>
                     <td>{item.maxPoint}</td>
                     {user.role === "ADMIN" ? (
-                      <td>
-                        <button className="danger" onClick={() => removeCriteria(item.id)}>
+                      <td className="criteria-action-cell">
+                        <button type="button" className="secondary sm" onClick={() => startEditCriteria(item)}>
+                          Sửa
+                        </button>
+                        <button type="button" className="danger sm" onClick={() => removeCriteria(item.id)}>
                           Xóa
                         </button>
                       </td>

@@ -34,4 +34,23 @@ router.patch("/:id/read", authenticate, async (req, res, next) => {
   }
 });
 
+router.patch("/read-all", authenticate, async (req, res, next) => {
+  try {
+    const updated = await prisma.notification.updateMany({
+      where: {
+        userId: req.user.id,
+        status: { not: "READ" },
+      },
+      data: { status: "READ" },
+    });
+
+    return res.json({
+      message: "Đã đánh dấu tất cả thông báo là đã đọc",
+      updated: updated.count,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 module.exports = router;

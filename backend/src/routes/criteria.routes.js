@@ -12,7 +12,7 @@ const criteriaSchema = z.object({
   description: z.string().optional(),
   maxPoint: z.number().int().positive(),
   target: z.enum(["SINHVIEN", "GIANGVIEN"]).optional(),
-  reviewLevel: z.enum(["DONVI", "KHOA", "TRUONG"]).optional(),
+  reviewLevel: z.enum(["KHOA", "TRUONG"]).optional(),
   periodYear: z.number().int().min(2020).optional(),
   academicYearId: z.number().int().positive().optional(),
   isActive: z.boolean().optional(),
@@ -106,7 +106,14 @@ router.put("/:id", authenticate, authorize("ADMIN", "HOIDONG"), async (req, res,
   try {
     const id = Number(req.params.id);
     const data = criteriaSchema.partial().parse(req.body);
-    const item = await prisma.criteria.update({ where: { id }, data });
+    const item = await prisma.$transaction(async (tx) => {
+      const updated = await tx.criteria.update({ where: { id }, data });
+      const validation = await ensureSubItemsNotExceedCriteriaMax(id, tx);
+      if (!validation.ok) {
+        throw Object.assign(new Error(validation.message), { status: validation.status });
+      }
+      return updated;
+    });
     await logAudit(req.user.id, "UPDATE_CRITERIA", `Updated criteria ${id}`);
     return res.json(item);
   } catch (error) {
@@ -117,7 +124,7 @@ router.put("/:id", authenticate, authorize("ADMIN", "HOIDONG"), async (req, res,
 router.delete("/:id", authenticate, authorize("ADMIN", "HOIDONG"), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    await prisma.criteria.delete({ where: { id } });
+    await prisma.criteria.update({ where: { id }, data: { isActive: false } });
     await logAudit(req.user.id, "DELETE_CRITERIA", `Deleted criteria ${id}`);
     return res.status(204).send();
   } catch (error) {

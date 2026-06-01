@@ -7,6 +7,9 @@ const { logAudit } = require("../utils/audit");
 
 const router = express.Router();
 
+const optionalText = z.string().nullable().optional();
+const optionalPositiveId = z.number().int().positive().nullable().optional();
+
 router.get("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
@@ -37,11 +40,11 @@ router.post("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
       email: z.string().email(),
       password: z.string().min(6),
       role: z.enum(["ADMIN", "CANBO", "GIANGVIEN", "SINHVIEN", "HOIDONG"]),
-      department: z.string().optional(),
-      departmentId: z.number().int().positive().optional(),
-      phone: z.string().optional(),
-      studentCode: z.string().optional(),
-      dateOfBirth: z.string().optional(),
+      department: optionalText,
+      departmentId: optionalPositiveId,
+      phone: optionalText,
+      studentCode: optionalText,
+      dateOfBirth: optionalText,
     });
     const data = schema.parse(req.body);
 
@@ -57,8 +60,8 @@ router.post("/", authenticate, authorize("ADMIN"), async (req, res, next) => {
         email: data.email,
         passwordHash,
         role: data.role,
-        department: data.department,
-        departmentId: data.departmentId,
+        department: data.department || null,
+        departmentId: data.departmentId || null,
         phone: data.phone || null,
         studentCode: data.studentCode || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
@@ -141,12 +144,12 @@ router.delete("/:id", authenticate, authorize("ADMIN"), async (req, res, next) =
   try {
     const id = Number(req.params.id);
     if (id === req.user.id) {
-      return res.status(400).json({ message: "Khong the xoa chinh tai khoan dang dang nhap" });
+      return res.status(400).json({ message: "Không thể xóa chính tài khoản đang đăng nhập" });
     }
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) {
-      return res.status(404).json({ message: "Khong tim thay nguoi dung" });
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
     await prisma.user.delete({ where: { id } });

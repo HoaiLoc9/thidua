@@ -5,7 +5,7 @@ export default function ProtectedRoute({ children, roles }) {
   const { authLoading, isAuthenticated, user } = useAuth();
 
   if (authLoading) {
-    return <div className="card">Dang kiem tra phien dang nhap...</div>;
+    return <div className="card">Đang kiểm tra phiên đăng nhập...</div>;
   }
 
   if (!isAuthenticated) {

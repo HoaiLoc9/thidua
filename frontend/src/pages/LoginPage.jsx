@@ -261,9 +261,6 @@ export default function LoginPage() {
               </svg>
             </button>
 
-            <p className="login-note login-field">
-              Tài khoản mẫu: admin@iuh.edu.vn, canbo1@iuh.edu.vn, hoidong@iuh.edu.vn, gv@iuh.edu.vn, sv@iuh.edu.vn - mật khẩu: 123456
-            </p>
           </form>
         </div>
       </div>

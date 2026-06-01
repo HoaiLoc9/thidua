@@ -13,6 +13,8 @@ frontend/dist/
 backend/.env
 frontend/.env
 *.local
+!backend/.env.example
+!frontend/.env.example
 
 # Runtime uploads and backups
 backend/uploads/

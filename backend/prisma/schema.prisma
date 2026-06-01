@@ -46,6 +46,31 @@ enum EvidenceScanStatus {
   SCAN_ERROR
 }
 
+enum SubmissionType {
+  INDIVIDUAL
+  GROUP
+}
+
+enum NominationMemberRole {
+  STUDENT
+  LECTURER
+  ADVISOR
+  CO_AUTHOR
+  LEADER
+}
+
+enum CouncilVoteChoice {
+  AGREE
+  DISAGREE
+  REVIEW_AGAIN
+}
+
+enum ScoreAdjustmentAction {
+  KEEP
+  ADJUST
+  CANCEL
+}
+
 model User {
   id           Int          @id @default(autoincrement())
   fullName     String
@@ -64,6 +89,11 @@ model User {
   notifications Notification[]
   auditLogs    AuditLog[]
   approvals    ApprovalResult[]
+  nominationMemberships NominationMember[]
+  councilVotes CouncilVote[]
+  scoreAdjustments ScoreAdjustment[]
+  archivedNominations Nomination[] @relation("NominationArchivedBy")
+  passwordResetOtps PasswordResetOtp[]
 }
 
 model Department {
@@ -127,6 +157,23 @@ model AwardType {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  criteria    AwardCriterion[]
+  nominations Nomination[]
+}
+
+model AwardCriterion {
+  id          Int       @id @default(autoincrement())
+  awardTypeId Int
+  title       String
+  description String?
+  minPoint    Int?
+  sortOrder   Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  awardType   AwardType @relation(fields: [awardTypeId], references: [id], onDelete: Cascade)
+  evidences   Evidence[]
+
+  @@index([awardTypeId])
 }
 
 model Nomination {
@@ -136,15 +183,47 @@ model Nomination {
   academicYearId Int?
   status         NominationStatus @default(DRAFT)
   totalSelfPoint Int              @default(0)
+  submissionType SubmissionType   @default(INDIVIDUAL)
+  groupName      String?
+  awardTypeId    Int?
   applicantId    Int
+  isArchived     Boolean          @default(false)
+  archivedAt     DateTime?
+  archivedById   Int?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   academicYear   AcademicYear?    @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  awardType      AwardType?       @relation(fields: [awardTypeId], references: [id], onDelete: SetNull)
   applicant      User             @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  archivedBy     User?            @relation("NominationArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
   items          NominationItem[]
   reviews        ReviewStep[]
   evidences      Evidence[]
   approvals      ApprovalResult[]
+  members        NominationMember[]
+  councilVotes   CouncilVote[]
+  scoreAdjustments ScoreAdjustment[]
+
+  @@index([awardTypeId])
+  @@index([isArchived])
+  @@index([archivedById])
+}
+
+model NominationMember {
+  id           Int                  @id @default(autoincrement())
+  nominationId Int
+  userId       Int?
+  fullName     String
+  email        String?
+  memberRole   NominationMemberRole
+  contribution String?
+  isLeader     Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  nomination   Nomination           @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user         User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([nominationId])
+  @@index([userId])
 }
 
 model NominationItem {
@@ -178,14 +257,55 @@ model ReviewStep {
 model Evidence {
   id           Int                @id @default(autoincrement())
   nominationId Int
+  awardCriterionId Int?
   fileUrl      String
   description  String?
   scanStatus   EvidenceScanStatus @default(PENDING_SCAN)
   fileHash     String?
   scanDetail   String?
   scannedAt    DateTime?
+  reviewPoint  Int?
   uploadedAt   DateTime           @default(now())
   nomination   Nomination         @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  awardCriterion AwardCriterion?   @relation(fields: [awardCriterionId], references: [id], onDelete: SetNull)
+  scoreAdjustments ScoreAdjustment[]
+
+  @@index([awardCriterionId])
+}
+
+model CouncilVote {
+  id           Int               @id @default(autoincrement())
+  nominationId Int
+  voterId      Int
+  choice       CouncilVoteChoice
+  comment      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  nomination   Nomination        @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  voter        User              @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([nominationId, voterId])
+  @@index([nominationId])
+  @@index([voterId])
+}
+
+model ScoreAdjustment {
+  id           Int                   @id @default(autoincrement())
+  nominationId Int
+  evidenceId   Int
+  adjustedById Int
+  action       ScoreAdjustmentAction
+  oldPoint     Int?
+  newPoint     Int?
+  reason       String
+  createdAt    DateTime              @default(now())
+  nomination   Nomination            @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  evidence     Evidence              @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  adjustedBy   User                  @relation(fields: [adjustedById], references: [id], onDelete: Cascade)
+
+  @@index([nominationId])
+  @@index([evidenceId])
+  @@index([adjustedById])
 }
 
 model ApprovalProcess {
@@ -235,4 +355,17 @@ model AuditLog {
   timestamp   DateTime @default(now())
   description String?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetOtp {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  otpHash   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

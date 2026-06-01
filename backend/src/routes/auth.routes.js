@@ -1,20 +1,18 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { z } = require("zod");
 const prisma = require("../lib/prisma");
 const { signAccessToken } = require("../utils/jwt");
-const { sendPasswordResetEmail } = require("../utils/email");
+const { sendPasswordResetOtpEmail } = require("../utils/email");
 const { authenticate } = require("../middlewares/auth");
 
 const router = express.Router();
 
-function signPasswordResetToken(user) {
-  return jwt.sign({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-}
+const PASSWORD_RESET_OTP_TTL_MINUTES = 10;
 
-function verifyPasswordResetToken(token) {
-  return jwt.verify(token, process.env.JWT_SECRET);
+function generateOtp() {
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 const registerSchema = z.object({
@@ -46,12 +44,54 @@ function userResponse(user) {
   };
 }
 
+async function createAndSendOtp(user) {
+  const otp = generateOtp();
+  const otpHash = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_OTP_TTL_MINUTES * 60 * 1000);
+
+  await prisma.$transaction([
+    prisma.passwordResetOtp.updateMany({
+      where: {
+        userId: user.id,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { usedAt: new Date() },
+    }),
+    prisma.passwordResetOtp.create({
+      data: {
+        userId: user.id,
+        otpHash,
+        expiresAt,
+      },
+    }),
+  ]);
+
+  return sendPasswordResetOtpEmail({
+    email: user.email,
+    fullName: user.fullName,
+    otp,
+    expiresInMinutes: PASSWORD_RESET_OTP_TTL_MINUTES,
+  });
+}
+
+async function findLatestValidOtp(userId) {
+  return prisma.passwordResetOtp.findFirst({
+    where: {
+      userId,
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 router.post("/register", async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
     const existed = await prisma.user.findUnique({ where: { email: data.email } });
     if (existed) {
-      return res.status(409).json({ message: "Email da ton tai" });
+      return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -88,12 +128,12 @@ router.post("/login", async (req, res, next) => {
 
     const user = await prisma.user.findUnique({ where: { email: data.email } });
     if (!user) {
-      return res.status(401).json({ message: "Sai tai khoan hoac mat khau" });
+      return res.status(401).json({ message: "Sai tài khoản hoặc mật khẩu" });
     }
 
     const ok = await bcrypt.compare(data.password, user.passwordHash);
     if (!ok) {
-      return res.status(401).json({ message: "Sai tai khoan hoac mat khau" });
+      return res.status(401).json({ message: "Sai tài khoản hoặc mật khẩu" });
     }
 
     const token = signAccessToken(user);
@@ -112,26 +152,16 @@ router.post("/forgot-password", async (req, res, next) => {
     const data = schema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email: data.email } });
-    const frontEndBase = process.env.FRONTEND_URL || "http://localhost:5173";
-    const token = user ? signPasswordResetToken(user) : null;
-    const resetUrl = token ? `${frontEndBase}/reset-password?token=${encodeURIComponent(token)}` : null;
-
-    if (user && token) {
-      const emailResult = await sendPasswordResetEmail({
-        email: user.email,
-        fullName: user.fullName,
-        resetUrl,
-      });
-
-      if (!emailResult.sent) {
-        return res.status(200).json({
-          message: "Yeu cau dat lai mat khau da duoc ghi nhan. Vui long kiem tra email.",
-        });
+    if (user) {
+      try {
+        await createAndSendOtp(user);
+      } catch (emailError) {
+        console.error("Password reset OTP email failed:", emailError.message);
       }
     }
 
     return res.status(200).json({
-      message: "Neu email ton tai trong he thong, ban se nhan duoc huong dan dat lai mat khau.",
+      message: "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được mã OTP đặt lại mật khẩu.",
     });
   } catch (error) {
     return next(error);
@@ -141,30 +171,40 @@ router.post("/forgot-password", async (req, res, next) => {
 router.post("/reset-password", async (req, res, next) => {
   try {
     const schema = z.object({
-      token: z.string().min(1),
+      email: z.string().email(),
+      otp: z.string().regex(/^\d{6}$/, "Mã OTP phải gồm 6 chữ số"),
       password: z.string().min(6),
     });
     const data = schema.parse(req.body);
 
-    let payload;
-    try {
-      payload = verifyPasswordResetToken(data.token);
-    } catch (error) {
-      return res.status(400).json({ message: "Lien ket dat lai mat khau khong hop le hoac da het han." });
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại." });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-    if (!user) {
-      return res.status(404).json({ message: "Nguoi dung khong ton tai." });
+    const otpRecord = await findLatestValidOtp(user.id);
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn." });
+    }
+
+    const otpMatched = await bcrypt.compare(data.otp, otpRecord.otpHash);
+    if (!otpMatched) {
+      return res.status(400).json({ message: "Mã OTP không đúng." });
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+      prisma.passwordResetOtp.update({
+        where: { id: otpRecord.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
 
-    return res.status(200).json({ message: "Mat khau da duoc dat lai thanh cong." });
+    return res.status(200).json({ message: "Mật khẩu đã được đặt lại thành công." });
   } catch (error) {
     return next(error);
   }
@@ -212,26 +252,61 @@ router.put("/me", authenticate, async (req, res, next) => {
   }
 });
 
+router.post("/change-password/otp", authenticate, async (req, res, next) => {
+  try {
+    const emailResult = await createAndSendOtp(req.user);
+
+    if (!emailResult.sent) {
+      return res.status(200).json({
+        message: "Yêu cầu gửi mã OTP đã được ghi nhận. Vui lòng kiểm tra cấu hình email nếu chưa nhận được mã.",
+      });
+    }
+
+    return res.json({
+      message: `Mã OTP đã được gửi về email ${req.user.email}. Mã có hiệu lực trong ${PASSWORD_RESET_OTP_TTL_MINUTES} phút.`,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.put("/change-password", authenticate, async (req, res, next) => {
   try {
     const schema = z.object({
       currentPassword: z.string().min(6),
       newPassword: z.string().min(6),
+      otp: z.string().regex(/^\d{6}$/, "Mã OTP phải gồm 6 chữ số"),
     });
     const data = schema.parse(req.body);
 
     const ok = await bcrypt.compare(data.currentPassword, req.user.passwordHash);
     if (!ok) {
-      return res.status(400).json({ message: "Mat khau hien tai khong dung" });
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+    }
+
+    const otpRecord = await findLatestValidOtp(req.user.id);
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn." });
+    }
+
+    const otpMatched = await bcrypt.compare(data.otp, otpRecord.otpHash);
+    if (!otpMatched) {
+      return res.status(400).json({ message: "Mã OTP không đúng." });
     }
 
     const passwordHash = await bcrypt.hash(data.newPassword, 10);
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: { passwordHash },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: req.user.id },
+        data: { passwordHash },
+      }),
+      prisma.passwordResetOtp.update({
+        where: { id: otpRecord.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
 
-    return res.json({ message: "Doi mat khau thanh cong" });
+    return res.json({ message: "Đổi mật khẩu thành công" });
   } catch (error) {
     return next(error);
   }

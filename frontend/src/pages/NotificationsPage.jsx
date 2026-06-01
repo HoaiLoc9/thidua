@@ -20,6 +20,11 @@ export default function NotificationsPage() {
     load();
   };
 
+  const markAllRead = async () => {
+    await api.patch("/notifications/read-all");
+    load();
+  };
+
   const extractNominationTitle = (message) => {
     const idx = message.indexOf(":");
     if (idx === -1) return "";
@@ -56,7 +61,20 @@ export default function NotificationsPage() {
 
   return (
     <div className="card">
-      <h2>Thông báo của tôi</h2>
+      <div className="notification-page-header">
+        <div>
+          <h2>Thông báo của tôi</h2>
+          <p>{notifications.filter((item) => item.status !== "READ").length} thông báo chưa đọc</p>
+        </div>
+        <button
+          type="button"
+          className="secondary"
+          onClick={markAllRead}
+          disabled={!notifications.some((item) => item.status !== "READ")}
+        >
+          Đánh dấu tất cả đã đọc
+        </button>
+      </div>
       {notifications.length === 0 ? <p>Chưa có thông báo.</p> : null}
       <div className="page-grid">
         {notifications.map((item) => (

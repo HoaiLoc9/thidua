@@ -5,9 +5,8 @@ const processTemplate = {
   processName: "",
   description: "",
   steps: [
-    { stepOrder: 1, role: "CANBO", description: "Duyệt cấp đơn vị" },
-    { stepOrder: 2, role: "CANBO", description: "Duyệt cấp khoa" },
-    { stepOrder: 3, role: "HOIDONG", description: "Phê duyệt cấp trường" },
+    { stepOrder: 1, role: "CANBO", description: "Duyệt cấp khoa" },
+    { stepOrder: 2, role: "HOIDONG", description: "Phê duyệt cấp trường" },
   ],
 };
 
