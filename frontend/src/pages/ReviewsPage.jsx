@@ -308,18 +308,23 @@ export default function ReviewsPage() {
 
   const submitScoreAdjustment = async (step, evidence) => {
     const form = adjustmentForms[evidence.id] || {};
+    const action = form.action || "ADJUST";
     const payload = {
       evidenceId: evidence.id,
-      action: form.action || "ADJUST",
+      action,
       reason: (form.reason || "").trim(),
     };
 
-    if (!payload.reason) {
+    if (action !== "KEEP" && !payload.reason) {
       alert("Vui lòng nhập lý do điều chỉnh điểm.");
       return;
     }
 
-    if (payload.action === "ADJUST") {
+    if (action === "KEEP" && !payload.reason) {
+      payload.reason = "Giữ nguyên điểm theo kết quả đã chấm.";
+    }
+
+    if (action === "ADJUST") {
       payload.newPoint = Number(form.newPoint);
       if (!Number.isInteger(payload.newPoint) || payload.newPoint < 0) {
         alert("Điểm mới phải là số nguyên không âm.");
@@ -895,7 +900,7 @@ export default function ReviewsPage() {
                               <input
                                 value={form.reason || ""}
                                 onChange={(e) => updateAdjustmentForm(entry.id, "reason", e.target.value)}
-                                placeholder="Lý do bắt buộc"
+                                placeholder="Lý do (bắt buộc khi điều chỉnh/hủy)"
                               />
                             </td>
                             <td>

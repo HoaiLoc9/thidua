@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/client";
@@ -382,6 +382,16 @@ export default function NominationsPage() {
     }
   };
 
+  const rejectReviewFromList = async (reviewId) => {
+    const reason = window.prompt("Nhập lý do từ chối hồ sơ:");
+    if (reason === null) return;
+    if (!reason.trim()) {
+      alert("Vui lòng nhập lý do trước khi từ chối hồ sơ.");
+      return;
+    }
+    await reviewFromList(reviewId, "REJECTED", reason.trim());
+  };
+
   const openScoreModal = (reviewId, nomination) => {
     const initialScores = {};
     const initialSubScores = {};
@@ -605,6 +615,20 @@ export default function NominationsPage() {
         score: Number(getDetailEvidenceScoreValue(entry)),
       })),
     });
+    closeDetailModal();
+  };
+
+  const rejectDetailKhoaReview = async (nomination) => {
+    const step = getMyPendingReviewStep(nomination);
+    if (!step || step.level !== "KHOA") {
+      alert("Không tìm thấy phiên duyệt cấp khoa của tài khoản hiện tại.");
+      return;
+    }
+    if (!detailReviewComment.trim()) {
+      alert("Vui lòng nhập lý do trước khi từ chối hồ sơ.");
+      return;
+    }
+    await reviewFromList(step.id, "REJECTED", detailReviewComment.trim());
     closeDetailModal();
   };
 
@@ -1224,14 +1248,21 @@ export default function NominationsPage() {
                   </div>
                 </td>
                 <td>{getLatestReviewComment(nom) || "-"}</td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => openDetailModal(nom)}
-                    className="btn-detail-small"
-                  >
-                    Chi tiết
-                  </button>
+                <td className="nomination-actions-cell">
+                  {!(canReview
+                    && nom.status === "SUBMITTED"
+                    && user.email === "canbo1@iuh.edu.vn"
+                    && (nom.reviews || []).some(
+                      (r) => r.reviewerId === user.id && r.decision === "PENDING" && r.level === "KHOA"
+                    )) ? (
+                    <button
+                      type="button"
+                      onClick={() => openDetailModal(nom)}
+                      className="btn-detail-small"
+                    >
+                      Chi tiết
+                    </button>
+                  ) : null}
 
                   {user.role === "ADMIN" && ["APPROVED", "REJECTED"].includes(nom.status) ? (
                     nom.isArchived ? (
@@ -1332,6 +1363,16 @@ export default function NominationsPage() {
                                 : "Duyệt"}
                           </button>
                         )}
+                        {user.role === "CANBO" && myPendingStep.level === "KHOA" ? (
+                          <button
+                            type="button"
+                            className="btn-detail-small danger"
+                            disabled={!unlocked || decidingReviewId === myPendingStep.id}
+                            onClick={() => rejectReviewFromList(myPendingStep.id)}
+                          >
+                            {decidingReviewId === myPendingStep.id ? "Đang xử lý..." : "Từ chối"}
+                          </button>
+                        ) : null}
                         {!unlocked ? <small>Chờ cấp trước duyệt</small> : null}
                       </div>
                     );
@@ -1603,6 +1644,14 @@ export default function NominationsPage() {
                     >
                       {decidingReviewId === getMyPendingReviewStep(nomination)?.id ? "Đang xử lý..." : "Duyệt và lưu điểm"}
                     </button>
+                    <button
+                      type="button"
+                      className="btn-detail-small danger"
+                      disabled={decidingReviewId === getMyPendingReviewStep(nomination)?.id}
+                      onClick={() => rejectDetailKhoaReview(nomination)}
+                    >
+                      {decidingReviewId === getMyPendingReviewStep(nomination)?.id ? "Đang xử lý..." : "Từ chối hồ sơ"}
+                    </button>
                   </>
                 ) : null}
                 <button type="button" className="btn-cancel" onClick={closeDetailModal}>Đóng</button>
@@ -1718,3 +1767,4 @@ export default function NominationsPage() {
     </div>
   );
 }
+

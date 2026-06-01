@@ -1,5 +1,6 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 const XLSX = require("xlsx");
 const PDFDocument = require("pdfkit");
 const prisma = require("../lib/prisma");
@@ -72,6 +73,7 @@ function archiveLabel(value) {
 
 function getVietnameseFontPath() {
   const candidates = [
+    path.join(__dirname, "../../assets/fonts/Arial.ttf"),
     "C:\\Windows\\Fonts\\arial.ttf",
     "C:\\Windows\\Fonts\\calibri.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",

@@ -907,14 +907,48 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  align-items: stretch;
+}
+
+.modal-actions .detail-review-comment {
+  flex: 1;
+  min-height: 52px;
+  margin: 0;
+}
+
+.modal-actions .btn-submit-small,
+.modal-actions .btn-detail-small,
+.modal-actions .btn-cancel {
+  min-width: 110px;
+  height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.modal-actions .btn-detail-small.danger {
+  border: 1px solid rgba(185, 28, 28, 0.24);
 }
 
 .btn-cancel {
   padding: 10px 16px;
   border: 1px solid var(--line);
   background: var(--bg-panel);
+  color: var(--text-main);
+  font-weight: 600;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.btn-cancel:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 
 .btn-upload-confirm:hover {
@@ -953,21 +987,24 @@
 
 .review-actions-inline .btn-submit-small,
 .review-actions-inline .danger {
-  min-width: 82px;
-  height: 36px;
+  width: 124px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12px;
+  padding: 0 10px;
+  margin: 0;
+  border-radius: 6px;
+  text-align: center;
+  line-height: 1.2;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .review-actions-inline .danger {
   border: none;
-  border-radius: 3px;
   background-color: var(--danger);
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
   cursor: pointer;
 }
 
@@ -982,6 +1019,25 @@
 
 .review-actions-inline small {
   color: var(--warning);
+}
+
+.nomination-actions-cell > .btn-detail-small,
+.nomination-actions-cell > .btn-submit-small,
+.nomination-actions-cell > .btn-upload-confirm,
+.nomination-actions-cell .review-actions-inline > .btn-submit-small,
+.nomination-actions-cell .review-actions-inline > .btn-detail-small.danger {
+  width: 124px;
+  min-height: 46px;
+  margin: 0 0 8px;
+  padding: 0 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .status-cell {

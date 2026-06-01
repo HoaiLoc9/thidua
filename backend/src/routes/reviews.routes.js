@@ -49,7 +49,7 @@ const scoreAdjustmentSchema = z.object({
   evidenceId: z.number().int().positive(),
   action: z.enum(["KEEP", "ADJUST", "CANCEL"]),
   newPoint: z.number().int().min(0).optional(),
-  reason: z.string().min(3).max(700),
+  reason: z.string().max(700).optional(),
 });
 
 const councilFinalizeSchema = z.object({
@@ -356,6 +356,10 @@ router.post("/:reviewId/council/adjust-evidence", authenticate, authorize("ADMIN
     if (data.action === "ADJUST" && data.newPoint === undefined) {
       return res.status(400).json({ message: "Cần nhập điểm mới khi điều chỉnh điểm" });
     }
+    const normalizedReason = (data.reason || "").trim();
+    if (data.action !== "KEEP" && normalizedReason.length < 3) {
+      return res.status(400).json({ message: "Vui lòng nhập lý do điều chỉnh điểm (ít nhất 3 ký tự)" });
+    }
 
     const oldPoint = evidence.reviewPoint;
     const nextPoint = data.action === "KEEP"
@@ -392,7 +396,7 @@ router.post("/:reviewId/council/adjust-evidence", authenticate, authorize("ADMIN
           action: data.action,
           oldPoint,
           newPoint: nextPoint,
-          reason: data.reason,
+          reason: normalizedReason || "Giữ nguyên điểm theo kết quả đã chấm.",
         },
       });
 
