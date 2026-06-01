@@ -188,3 +188,16 @@ Tat ca route backend nam duoi prefix `/api`:
 
 README nay da cap nhat theo he thong hien tai su dung PostgreSQL va bo migration trong `backend/prisma/migrations`.
 Neu ban moi clone du an, uu tien dung `prisma:deploy` thay cho `prisma:migrate` de tranh tao migration moi khong can thiet.
+
+## Deploy len EC2 bang Docker Compose
+
+Du an da duoc bo sung bo file deploy production:
+
+- `docker-compose.yml`
+- `backend/Dockerfile`
+- `frontend/Dockerfile`
+- `deploy/nginx/frontend.conf`
+- `deploy/scripts/deploy.sh`
+- `docs/DEPLOY_EC2.md`
+
+Huong dan chi tiet tai: `docs/DEPLOY_EC2.md`.

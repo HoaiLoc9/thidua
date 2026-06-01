@@ -489,7 +489,17 @@ router.put("/:id", authenticate, async (req, res, next) => {
 router.post("/:id/submit", authenticate, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const nomination = await prisma.nomination.findUnique({ where: { id } });
+    const nomination = await prisma.nomination.findUnique({
+      where: { id },
+      include: {
+        applicant: {
+          select: {
+            id: true,
+            departmentId: true,
+          },
+        },
+      },
+    });
 
     if (!nomination) {
       return res.status(404).json({ message: "Không tìm thấy hồ sơ" });
@@ -504,7 +514,10 @@ router.post("/:id/submit", authenticate, async (req, res, next) => {
     }
 
     const khoaReviewer = await prisma.user.findFirst({
-      where: { email: "canbo1@iuh.edu.vn", role: "CANBO" },
+      where: {
+        role: "CANBO",
+        ...(nomination.applicant?.departmentId ? { departmentId: nomination.applicant.departmentId } : {}),
+      },
       orderBy: { id: "asc" },
     });
     const schoolReviewer = await prisma.user.findFirst({
@@ -558,7 +571,6 @@ router.post("/:id/submit", authenticate, async (req, res, next) => {
     return next(error);
   }
 });
-
 router.post("/:id/reopen", authenticate, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -873,3 +885,5 @@ router.delete("/:id/evidences/:evidenceId", authenticate, async (req, res, next)
 });
 
 module.exports = router;
+
+
