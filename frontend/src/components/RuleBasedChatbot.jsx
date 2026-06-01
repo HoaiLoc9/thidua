@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -82,6 +82,12 @@ export default function RuleBasedChatbot() {
   const userRole = user?.role || "SINHVIEN";
   const currentPage = getPageContext(location.pathname);
   const canReview = ["CANBO", "HOIDONG", "ADMIN"].includes(userRole);
+  const systemKeywords = [
+    "api", "endpoint", "database", "db", "sql", "schema", "server", "deploy",
+    "docker", "container", "source code", "ma nguon", "token", "jwt", "secret",
+    "password", "mat khau", "key", "log", "audit", "config", "cau hinh",
+    "ha tang", "port", "ip", "host", "clamav",
+  ];
 
   const quickActions = useMemo(() => {
     const base = ["Nộp hồ sơ thế nào?", "Upload file nào được phép?", "Điểm được tính thế nào?"];
@@ -101,7 +107,7 @@ export default function RuleBasedChatbot() {
     }
 
     if (location.pathname.startsWith("/settings") || location.pathname.startsWith("/users")) {
-      return ["Phân quyền actor", "Quản lý người dùng", "Audit log dùng để làm gì?", "Quét lại file chờ"];
+      return ["Phân quyền vai trò", "Quản lý người dùng", "Quy trình duyệt hồ sơ", "Hồ sơ chờ duyệt"];
     }
 
     return canReview ? ["Hồ sơ chờ duyệt", "Quy trình duyệt hồ sơ", ...base] : ["Hồ sơ của tôi", ...base];
@@ -158,6 +164,9 @@ export default function RuleBasedChatbot() {
 
   const buildAnswer = async (question) => {
     const q = normalizeText(question);
+    if (systemKeywords.some((keyword) => q.includes(keyword))) {
+      return "Mình chỉ hỗ trợ hướng dẫn quy trình sử dụng. Mình không thể cung cấp thông tin kỹ thuật hoặc nội bộ hệ thống.";
+    }
 
     if (q.includes("ho so cua toi") || q.includes("tra cuu") || q.includes("trang thai ho so")) {
       return canReview ? getPendingReviewsAnswer() : getMyNominationsAnswer();
@@ -188,8 +197,7 @@ export default function RuleBasedChatbot() {
         "1. Nên dùng các file: PDF, DOCX, XLSX, PNG, JPG, JPEG hoặc ZIP.",
         "2. Không upload file thực thi như EXE, BAT, CMD, JS lạ.",
         "3. Mỗi tiêu chí nên có minh chứng riêng để người duyệt dễ kiểm tra.",
-        "4. Hệ thống sẽ kiểm tra định dạng và quét mã độc bằng ClamAV.",
-        "5. Nếu file bị báo lỗi quét, hãy thử lại sau hoặc liên hệ quản trị viên.",
+        "4. Nếu file bị báo lỗi kiểm tra, hãy thử lại sau hoặc liên hệ quản trị viên.",
       ].join("\n");
     }
 
@@ -250,7 +258,7 @@ export default function RuleBasedChatbot() {
     }
 
     if (q.includes("audit") || q.includes("nhat ky")) {
-      return "Audit log dùng để ghi lại thao tác quan trọng như tạo hồ sơ, duyệt, từ chối, phân công lại, upload/tải minh chứng và thay đổi tiêu chí. Đây là phần giúp hệ thống minh bạch và dễ truy vết.";
+      return "Mình chỉ hỗ trợ hướng dẫn quy trình sử dụng. Mình không thể cung cấp thông tin kỹ thuật hoặc nội bộ hệ thống.";
     }
 
     if (q.includes("phan quyen") || q.includes("actor") || q.includes("vai tro")) {
@@ -259,7 +267,7 @@ export default function RuleBasedChatbot() {
 
     return [
       `Mình chưa hiểu rõ câu hỏi. Bạn đang ở trang ${currentPage}, vai trò ${roleLabel[userRole] || userRole}.`,
-      "Bạn có thể hỏi về: nộp hồ sơ, trạng thái hồ sơ, upload minh chứng, cách tính điểm, hồ sơ bị từ chối, quy trình duyệt hoặc phân quyền actor.",
+      "Bạn có thể hỏi về: nộp hồ sơ, trạng thái hồ sơ, upload minh chứng, cách tính điểm, hồ sơ bị từ chối, quy trình duyệt hoặc phân quyền vai trò.",
     ].join("\n");
   };
 
@@ -347,3 +355,4 @@ export default function RuleBasedChatbot() {
     </div>
   );
 }
+
