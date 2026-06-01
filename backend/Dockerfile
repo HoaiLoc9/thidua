@@ -9,6 +9,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 COPY src ./src
+COPY assets ./assets
 COPY data ./data
 COPY scripts ./scripts
 
